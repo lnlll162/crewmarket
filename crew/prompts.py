@@ -19,6 +19,8 @@ MARKET_SCHEMA = """
   "marketTrends": "市场趋势总结（80-200字）",
   "competitorStyle": "竞品文案特点（60-150字）",
   "userPersona": "目标用户画像（60-150字）",
+  "brandTone": "品牌调性建议（40-120字）",
+  "visualStyle": "视觉风格建议（40-120字）",
   "marketingSuggestions": ["可执行建议1", "可执行建议2", "可执行建议3"]
 }
 """.strip()
@@ -28,7 +30,13 @@ CONTENT_SCHEMA = """
   "title": "商品标题（8-40字，含品类+1-2个核心差异点）",
   "sellingPointCopy": ["卖点1：特点 - 用户收益", "卖点2：...", "卖点3：..."],
   "detailPageContent": "详情页正文（150-400字，分场景描述，不得逐条复述 sellingPointCopy）",
-  "conversionDescription": "转化短描述（15-50字，含明确行动号召）"
+  "conversionDescription": "转化短描述（15-50字，含明确行动号召）",
+  "videoScript": "15-30秒短视频脚本（按镜头或分镜输出）",
+  "posterCopy": {
+    "headline": "海报主标题",
+    "subheadline": "海报副标题",
+    "slogan": "海报传播口号"
+  }
 }
 """.strip()
 
@@ -36,7 +44,12 @@ SEO_SCHEMA = """
 {
   "keywords": ["关键词1", "...共5-10个"],
   "optimizedTitle": "搜索优化标题（含核心关键词，8-50字）",
-  "searchFriendlyCopy": "搜索友好文案（80-200字，自然嵌入关键词，不堆砌）"
+  "searchFriendlyCopy": "搜索友好文案（80-200字，自然嵌入关键词，不堆砌）",
+  "channelAdaptation": {
+    "xiaohongshu": "小红书适配文案（80-180字）",
+    "weibo": "微博适配文案（60-140字）",
+    "douyin": "抖音适配文案（50-120字）"
+  }
 }
 """.strip()
 
@@ -91,7 +104,7 @@ def content_write_prompt(
     attributes = product.get("attributes", {}).get("value", [])
     return f"""{GLOBAL_RULES}
 
-【任务】撰写电商营销文案 JSON。
+【任务】生成统一的营销内容与物料文案 JSON。
 
 【输出 schema】
 {CONTENT_SCHEMA}
@@ -100,12 +113,15 @@ def content_write_prompt(
 - sellingPointCopy 必须 3-5 条，格式「特点 - 用户收益」，基于已确认的产品属性。
 - detailPageContent 按「使用场景 → 核心体验 → 适合人群 → 购买理由」组织，禁止逐条复制 sellingPointCopy。
 - title 与 conversionDescription 必须有转化导向，但不夸大。
+- videoScript 输出 15-30 秒短视频脚本，可按镜头/分镜/口播结构组织。
+- posterCopy 要兼顾海报传播：headline 强吸睛，subheadline 补充卖点，slogan 简短有记忆点。
 - 优先使用以下已提取信息：属性={_dump(attributes)}，卖点={_dump(selling_points)}。
+- 结合市场分析中的品牌调性与视觉风格建议，保持文案口径一致。
 
 【产品信息】
 {_dump(product)}
 
-【市场分析】
+【市场与品牌策略】
 {_dump(market)}
 
 【补充选项】
@@ -115,7 +131,7 @@ def content_write_prompt(
 def seo_optimize_prompt(content: dict[str, Any], category: str) -> str:
     return f"""{GLOBAL_RULES}
 
-【任务】对电商文案做 SEO 优化，只输出 JSON。
+【任务】对营销内容做渠道适配与 SEO 优化，只输出 JSON。
 
 【输出 schema】
 {SEO_SCHEMA}
@@ -124,6 +140,7 @@ def seo_optimize_prompt(content: dict[str, Any], category: str) -> str:
 - keywords 5-10 个，覆盖品类词、功能词、场景词。
 - optimizedTitle 与原文案 title 语义一致但更适合搜索，不要无关堆砌。
 - searchFriendlyCopy 与 detailPageContent 互补，不要整段重复。
+- channelAdaptation 中的三平台文案要与内容模块一致，但分别适配平台语气。
 
 【原文案】
 {_dump(content)}

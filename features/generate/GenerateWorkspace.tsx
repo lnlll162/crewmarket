@@ -1,19 +1,21 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import {
-  Button,
-  Card,
-  CardBody,
-  Input,
-  Tab,
-  Tabs,
-  Textarea,
-} from '@heroui/react';
-import { LoadingState } from '@/components/ui/LoadingState';
+import { Button, Card, CardBody, Input, Tab, Tabs, Textarea } from '@heroui/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { EmptyState } from '@/components/ui/EmptyState';
-import type { ApiResponse, PipelineRunRequest, PipelineRunResponseData } from '@/types';
+import type { PipelineRunRequest } from '@/types';
+import { PipelineProgress, PipelineOverview } from './PipelineProgress';
+import { usePipelineRun } from './usePipelineRun';
+import {
+  ContentResultView,
+  MarketResultView,
+  MergeResultView,
+  ProductResultView,
+  SeoResultView,
+  SocialResultView,
+} from './ResultDisplay';
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -30,9 +32,8 @@ export function GenerateWorkspace() {
   const [category, setCategory] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | undefined>();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<PipelineRunResponseData | null>(null);
+
+  const { loading, error, stepStatus, currentStep, steps, result, run } = usePipelineRun();
 
   const onImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -43,14 +44,7 @@ export function GenerateWorkspace() {
   };
 
   const handleGenerate = useCallback(async () => {
-    if (!description.trim()) {
-      setError('请填写产品描述');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setResult(null);
+    if (!description.trim()) return;
 
     const payload: PipelineRunRequest = {
       description: description.trim(),
@@ -61,106 +55,175 @@ export function GenerateWorkspace() {
       },
     };
 
-    try {
-      const res = await fetch('/api/pipeline/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const json = (await res.json()) as ApiResponse<PipelineRunResponseData>;
-      if (json.code !== 0 || !json.data) {
-        throw new Error(json.message || '生成失败');
-      }
-      setResult(json.data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '生成失败');
-    } finally {
-      setLoading(false);
-    }
-  }, [description, imageBase64, productName, category]);
+    await run(payload);
+  }, [description, imageBase64, productName, category, run]);
 
-  const exportJson = () => {
-    if (!result) return;
-    const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `crewmarket-${result.pipelineId}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const showProgress = loading || result != null;
+  const hasPartialResults = Object.keys(steps).length > 0;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
-      <Card className="border border-white/10 bg-white/5">
-        <CardBody className="gap-4 p-6">
-          <h2 className="text-xl font-semibold text-white">产品输入</h2>
-          <Textarea
-            label="产品描述"
-            placeholder="描述产品功能、材质、适用场景…"
-            value={description}
-            onValueChange={setDescription}
-            minRows={4}
-          />
-          <Input label="产品名称（可选）" value={productName} onValueChange={setProductName} />
-          <Input label="品类（可选）" value={category} onValueChange={setCategory} />
-          <div>
-            <p className="mb-2 text-sm text-zinc-400">产品图片（可选，支持识图）</p>
-            <input type="file" accept="image/*" onChange={onImageChange} className="text-sm text-zinc-300" />
-            {imagePreview && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={imagePreview} alt="预览" className="mt-3 max-h-40 rounded-lg object-cover" />
-            )}
-          </div>
-          <Button color="secondary" size="lg" isLoading={loading} onPress={handleGenerate}>
-            一键生成全部内容
-          </Button>
-        </CardBody>
-      </Card>
-
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-white">生成结果</h2>
-        {loading && <LoadingState label="CrewAI 多智能体生成中，请稍候…" />}
-        {error && !loading && <ErrorState message={error} onRetry={handleGenerate} />}
-        {!loading && !error && !result && <EmptyState message="填写产品信息并点击生成" />}
-        {result && !loading && (
-          <>
-            <div className="flex gap-2">
-              <Button size="sm" variant="flat" onPress={exportJson}>
-                导出 JSON
-              </Button>
-              <Button
-                size="sm"
-                variant="flat"
-                onPress={() => navigator.clipboard.writeText(JSON.stringify(result, null, 2))}
-              >
-                复制 JSON
-              </Button>
+    <div className="space-y-8">
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,380px)_1fr]">
+        <Card className="border border-white/10 bg-gradient-to-b from-white/[0.07] to-transparent shadow-xl shadow-violet-950/20">
+          <CardBody className="gap-5 p-6">
+            <div>
+              <h2 className="text-xl font-semibold text-white">产品输入</h2>
+              <p className="mt-1 text-sm text-zinc-500">填写描述并可选上传图片，启动 6 智能体流水线</p>
             </div>
-            <Tabs aria-label="结果预览">
-              <Tab key="content" title="文案">
-                <pre className="max-h-96 overflow-auto rounded-xl bg-black/40 p-4 text-xs text-zinc-300">
-                  {JSON.stringify(result.steps.content, null, 2)}
-                </pre>
-              </Tab>
-              <Tab key="seo" title="SEO">
-                <pre className="max-h-96 overflow-auto rounded-xl bg-black/40 p-4 text-xs text-zinc-300">
-                  {JSON.stringify(result.steps.seo, null, 2)}
-                </pre>
-              </Tab>
-              <Tab key="social" title="社媒">
-                <pre className="max-h-96 overflow-auto rounded-xl bg-black/40 p-4 text-xs text-zinc-300">
-                  {JSON.stringify(result.steps.social, null, 2)}
-                </pre>
-              </Tab>
-              <Tab key="all" title="完整">
-                <pre className="max-h-96 overflow-auto rounded-xl bg-black/40 p-4 text-xs text-zinc-300">
-                  {JSON.stringify(result, null, 2)}
-                </pre>
-              </Tab>
-            </Tabs>
-          </>
-        )}
+            <Textarea
+              label="产品描述"
+              placeholder="描述产品功能、材质、适用场景、目标人群…"
+              value={description}
+              onValueChange={setDescription}
+              minRows={4}
+              isDisabled={loading}
+            />
+            <Input
+              label="产品名称（可选）"
+              value={productName}
+              onValueChange={setProductName}
+              isDisabled={loading}
+            />
+            <Input
+              label="品类（可选）"
+              value={category}
+              onValueChange={setCategory}
+              isDisabled={loading}
+            />
+            <div>
+              <p className="mb-2 text-sm text-zinc-400">产品图片（可选，支持识图）</p>
+              <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-violet-500/30 bg-violet-500/5 px-4 py-6 transition hover:border-violet-400/50 hover:bg-violet-500/10">
+                <span className="text-sm text-violet-300">点击上传或拖拽图片</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={onImageChange}
+                  className="hidden"
+                  disabled={loading}
+                />
+              </label>
+              {imagePreview && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={imagePreview}
+                  alt="预览"
+                  className="mt-3 max-h-44 w-full rounded-xl object-cover ring-1 ring-white/10"
+                />
+              )}
+            </div>
+            {!description.trim() && !loading && (
+              <p className="text-xs text-amber-400/80">请先填写产品描述</p>
+            )}
+            <Button
+              color="secondary"
+              size="lg"
+              className="bg-gradient-to-r from-violet-600 to-fuchsia-600 font-semibold"
+              isLoading={loading}
+              isDisabled={!description.trim()}
+              onPress={handleGenerate}
+            >
+              {loading ? '智能体协作生成中…' : '一键生成全部内容'}
+            </Button>
+          </CardBody>
+        </Card>
+
+        <div className="space-y-6">
+          {showProgress && (
+            <PipelineProgress
+              stepStatus={stepStatus}
+              currentStep={currentStep}
+              compact={loading}
+            />
+          )}
+
+          {!showProgress && !error && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-white">协作流程预览</h2>
+              <PipelineOverview />
+            </div>
+          )}
+
+          {error && !loading && <ErrorState message={error} onRetry={handleGenerate} />}
+
+          <AnimatePresence mode="wait">
+            {hasPartialResults && (
+              <motion.div
+                key="results"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-4"
+              >
+                <motion.div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-white">
+                    {loading ? '已生成内容' : '营销物料'}
+                  </h2>
+                  {result && (
+                    <span className="text-xs text-zinc-500">
+                      {new Date(result.generatedAt).toLocaleString('zh-CN')}
+                    </span>
+                  )}
+                </motion.div>
+
+                <Tabs aria-label="结果分类" color="secondary" variant="underlined">
+                  <Tab key="summary" title="汇总">
+                    {steps.merged ? (
+                      <MergeResultView data={steps.merged} />
+                    ) : (
+                      <EmptyState message="汇总结果不可用" />
+                    )}
+                  </Tab>
+                  <Tab key="product" title="产品">
+                    {steps.productExtract ? (
+                      <ProductResultView data={steps.productExtract} />
+                    ) : (
+                      <EmptyState />
+                    )}
+                  </Tab>
+                  <Tab key="market" title="市场">
+                    {steps.marketResearch ? (
+                      <MarketResultView data={steps.marketResearch} />
+                    ) : (
+                      <EmptyState />
+                    )}
+                  </Tab>
+                  <Tab key="content" title="文案">
+                    {steps.content ? (
+                      <ContentResultView data={steps.content} />
+                    ) : (
+                      <EmptyState />
+                    )}
+                  </Tab>
+                  <Tab key="seo" title="SEO">
+                    {steps.seo ? <SeoResultView data={steps.seo} /> : <EmptyState />}
+                  </Tab>
+                  <Tab key="social" title="社媒">
+                    {steps.social ? (
+                      <SocialResultView data={steps.social} />
+                    ) : (
+                      <EmptyState />
+                    )}
+                  </Tab>
+                </Tabs>
+              </motion.div>
+            )}
+
+            {loading && !hasPartialResults && (
+              <motion.div
+                key="loading-hint"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-center text-sm text-violet-200"
+              >
+                首个步骤完成后将自动展示内容，请耐心等待…
+              </motion.div>
+            )}
+
+            {!loading && !error && !hasPartialResults && (
+              <EmptyState message="填写左侧产品信息并点击生成，即可看到实时流程与结构化结果" />
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

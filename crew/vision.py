@@ -39,9 +39,11 @@ def _call_vision_api(
     *,
     retry_hint: str = "",
 ) -> str:
-    api_key = os.getenv("SILICONFLOW_API_KEY")
+    api_key = os.getenv("SILICONFLOW_API_KEY", "").strip()
     if not api_key:
         raise ValueError("未配置 SILICONFLOW_API_KEY")
+    if api_key.lower() in {"your_siliconflow_api_key_here", "your_api_key_here", "changeme"}:
+        raise ValueError("SILICONFLOW_API_KEY 仍是占位符，请替换为真实的硅基流动 API Key")
 
     model = os.getenv(
         "AGENT_MODEL_PRODUCT_EXTRACT_MODEL",
@@ -66,12 +68,22 @@ def _call_vision_api(
         "temperature": 0.3,
     }
 
-    with httpx.Client(timeout=120.0) as client:
-        resp = client.post(
-            f"{SILICONFLOW_BASE_URL}/chat/completions",
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json=payload,
-        )
+    timeout = httpx.Timeout(connect=60.0, read=600.0, write=60.0, pool=60.0)
+    with httpx.Client(timeout=timeout) as client:
+        try:
+            resp = client.post(
+                f"{SILICONFLOW_BASE_URL}/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json=payload,
+            )
+        except httpx.ReadTimeout as exc:
+            raise ValueError(
+                "硅基流动 Vision 请求超时（read timeout）。请检查网络、模型是否过忙，或尝试换一个更快的视觉模型。"
+            ) from exc
+        if resp.status_code == 401:
+            raise ValueError(
+                "硅基流动 API 返回 401 Unauthorized。请检查 SILICONFLOW_API_KEY 是否正确、是否仍为占位符、以及该 Key 是否有对应模型权限。"
+            )
         resp.raise_for_status()
         data = resp.json()
 
