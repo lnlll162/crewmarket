@@ -58,19 +58,51 @@ CrewMarket 面向电商运营与内容团队，通过多智能体协作，自动
 
 ## 快速开始
 
+### 环境要求
+
+- Node.js 16+（推荐 18+）
+- Python 3.10+（`py -3`）
+
+### 安装与运行
+
 ```bash
 git clone https://github.com/lnlll162/crewmarket.git
 cd crewmarket
+
+# 1. 前端依赖
+npm install
+
+# 2. Python / CrewAI 环境
+npm run crew:setup
+
+# 3. 配置硅基流动 Key（复制 docs/api/env.example → .env）
+# SILICONFLOW_API_KEY=你的Key
+
+# 4. 启动开发服务器
+npm run dev
 ```
 
-当前仓库为**规范与规则基线**，应用脚手架与 API 实现将在后续迭代中补充。
+浏览器打开 [http://localhost:3000](http://localhost:3000)，填写产品描述（可上传图片），点击「一键生成全部内容」。
+
+### API 端点
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/pipeline/run` | 一键编排（前端主入口） |
+| POST | `/api/product/analyze` | 产品提取 + 市场分析 |
+| POST | `/api/content/generate` | 文案生成 |
+| POST | `/api/seo/optimize` | SEO 优化 |
+| POST | `/api/social/generate` | 社媒文案 |
+| POST | `/api/result/merge` | 汇总输出 |
+
+详见 [`docs/api/README.md`](docs/api/README.md)。
 
 ## 路线图
 
-- [ ] Next.js 应用脚手架
-- [ ] 产品分析与内容生成 API
-- [ ] 前端内容预览与导出
-- [ ] CrewAI 工作流集成
+- [x] Next.js 应用脚手架
+- [x] 产品分析与内容生成 API
+- [x] 前端内容预览与导出
+- [x] CrewAI 工作流集成
 
 ## 许可证
 

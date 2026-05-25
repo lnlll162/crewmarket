@@ -1,0 +1,19 @@
+export const API_CODES = {
+  SUCCESS: 0,
+  PARAM_ERROR: 40001,
+  IMAGE_PARSE_ERROR: 40002,
+  GENERATION_FAILED: 50001,
+  EMPTY_DATA: 50002,
+  AI_SERVICE_ERROR: 50003,
+  MERGE_CONSISTENCY_ERROR: 50004,
+} as const;
+
+export const API_MESSAGES: Record<number, string> = {
+  [API_CODES.SUCCESS]: 'success',
+  [API_CODES.PARAM_ERROR]: '参数缺失或格式错误',
+  [API_CODES.IMAGE_PARSE_ERROR]: '图片解析失败',
+  [API_CODES.GENERATION_FAILED]: '模型生成失败',
+  [API_CODES.EMPTY_DATA]: '返回数据为空',
+  [API_CODES.AI_SERVICE_ERROR]: 'AI 服务异常',
+  [API_CODES.MERGE_CONSISTENCY_ERROR]: '汇总一致性校验失败',
+};
