@@ -1,3 +1,81 @@
 ---
+description: CrewAI 电商营销系统的前后端接口规范、数据结构与联调约定
 alwaysApply: true
 ---
+
+# 前后端接口规范
+
+在进行前端和后端开发之前，必须先完成接口定义与数据结构约定，确保联调时不会出现字段不一致、参数缺失、返回格式错误等问题。
+
+## 必须先输出的 API 设计文档内容
+- 接口名称与用途
+- 请求方式
+- 请求地址
+- 请求参数说明
+- 返回参数说明
+- 数据类型统一约定
+- 返回格式统一
+- 错误码说明
+- 分页、排序、筛选规则
+- 前后端协作规范
+- 接口联调输出
+
+## 接口命名示例
+- `/api/pipeline/run`
+- `/api/product/analyze`
+- `/api/content/generate`
+- `/api/seo/optimize`
+- `/api/social/generate`
+- `/api/result/merge`
+
+## 核心字段约定
+- 一键流程步骤键必须保持：`productExtract`、`marketResearch`、`content`、`seo`、`social`、`merged`
+- `/api/product/analyze` 返回 `product` 与 `market`
+- `/api/content/generate` 返回完整内容物料，包括 `posterCopy`、`imageIdeas`、`videoScript`、`videoMaterial`
+- `/api/seo/optimize` 返回 `keywords`、`optimizedTitle`、`searchFriendlyCopy`、`channelAdaptation`
+- `/api/social/generate` 返回 `copies` 与 `scriptSuggestion`
+- `/api/result/merge` 返回 `package`、`consistencyNotes`、`pendingConfirmations`
+
+
+## 统一返回结构
+成功时：
+```json
+{ "code": 0, "message": "success", "data": {} }
+```
+
+失败时：
+```json
+{ "code": 40001, "message": "参数缺失", "data": null }
+```
+
+## 数据类型统一约定
+- 字符串 `string`
+- 数值 `number`
+- 布尔值 `boolean`
+- 数组 `array`
+- 对象 `object`
+- 时间格式使用 ISO 8601 或统一时间戳格式
+
+## 错误码要求
+必须定义统一错误码体系，包括：
+- 参数错误
+- 图片解析失败
+- 模型生成失败
+- 数据为空
+- 服务异常
+- 权限错误
+
+## 开发约束
+- 前端和后端必须严格遵循统一接口协议
+- 所有字段命名必须一致
+- 接口变更必须同步更新文档
+- 前端不得自行猜测字段含义
+- 后端不得随意更改返回结构
+
+## 联调输出要求
+系统最终应同时给出：
+- 后端接口设计
+- 前端调用方式
+- 前后端数据交互流程
+- 接口示例请求与响应
+- 可直接用于前端展示的字段说明

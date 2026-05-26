@@ -43,16 +43,39 @@
   - [x] 营销物料扩展结果（海报布局、分镜、画面提示词）
   - [x] 汇总营销方案（最终 JSON 结构）
 - [x] 确认接口路径约定
-  - [x] `POST /api/pipeline/run` — **一键编排**（前端主入口）
   - [x] `POST /api/product/analyze` — 产品提取 + 市场分析（2 个 AI Task）
   - [x] `POST /api/content/generate` — 电商文案（1 个 AI Task）
   - [x] `POST /api/seo/optimize` — SEO 优化（1 个 AI Task）
+  - [x] `POST /api/social/generate` — 社媒文案（1 个 AI Task）
+  - [x] `POST /api/result/merge` — 汇总协调（1 个 AI Task）
+  - [x] `POST /api/pipeline/run` — 保留的一键编排入口（后端/调试/未来批处理使用）
+  - [x] 前端主流程采用分布式串行调用，上述 5 个业务接口为当前实际运行路径
   - [x] `POST /api/social/generate` — 社媒文案（1 个 AI Task）
   - [x] `POST /api/result/merge` — 汇总协调（1 个 AI Task）
 
 ---
 
 ## 阶段 2：Next.js 应用脚手架
+
+> 当前前端已采用分布式串行调用作为主流程；`/api/pipeline/run` 仅作为保留的一键编排入口与后端调试入口，不作为首页默认主路径。
+
+### 模块组织方式（当前约定）
+
+- `features/generate/` — 首页生成工作台与分步调用流程
+- `features/generate/usePipelineRun.ts` — 分布式串行调用编排
+- `features/generate/PipelineProgress.tsx` — 步骤进度展示
+- `features/generate/ResultDisplay.tsx` — 结果展示分区
+- `types/index.ts` — 请求、响应、任务与模型配置类型
+- `docs/api/README.md` — 接口契约与 AI Task 映射说明
+
+### 保留 TODO（不得遗漏）
+
+- [ ] 校验首页图片上传点击交互在各浏览器下的稳定性
+- [ ] 统一前端主流程、接口文档与任务名称的叙事口径
+- [ ] 确认后端各接口对 `imageBase64` 的接收与识图链路完整性
+- [ ] 在后端实现前，保持前端分布式串行调用路径不变
+- [ ] 后续如需切回一键编排，需同步更新文档、类型与前端调用逻辑
+
 
 - [ ] 初始化 Next.js + TypeScript 项目
 - [ ] 集成 Tailwind CSS

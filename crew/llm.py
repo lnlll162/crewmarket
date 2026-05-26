@@ -7,11 +7,10 @@ from typing import Optional
 
 from crewai import LLM
 
-from config import SILICONFLOW_BASE_URL, TASK_ENV_PREFIX, AiTaskId
+from config import AiTaskId, SILICONFLOW_BASE_URL, TASK_ENV_PREFIX
 
-DEFAULT_PROVIDER = os.getenv("LLM_DEFAULT_PROVIDER", "siliconflow")
 DEFAULT_MODEL = os.getenv("LLM_DEFAULT_MODEL", "deepseek-ai/DeepSeek-V3")
-DEFAULT_KEY = os.getenv("SILICONFLOW_API_KEY", "")
+DEFAULT_API_KEY = os.getenv("SILICONFLOW_API_KEY", "")
 
 TASK_TEMPERATURE: dict[AiTaskId, float] = {
     "task.product_extract": 0.3,
@@ -23,19 +22,24 @@ TASK_TEMPERATURE: dict[AiTaskId, float] = {
 }
 
 
-def get_llm(task_id: AiTaskId) -> LLM:
+def _resolve_task_model(task_id: AiTaskId) -> str:
     prefix = TASK_ENV_PREFIX[task_id]
-    provider = os.getenv(f"{prefix}_PROVIDER", DEFAULT_PROVIDER)
-    model = os.getenv(f"{prefix}_MODEL", DEFAULT_MODEL)
-    api_key = os.getenv("SILICONFLOW_API_KEY", DEFAULT_KEY)
+    return os.getenv(f"{prefix}_MODEL", DEFAULT_MODEL).strip()
+
+
+def _resolve_api_key() -> str:
+    return os.getenv("SILICONFLOW_API_KEY", DEFAULT_API_KEY).strip()
+
+
+def get_llm(task_id: AiTaskId) -> LLM:
+    model = _resolve_task_model(task_id)
+    api_key = _resolve_api_key()
 
     if not api_key:
         raise ValueError("未配置 SILICONFLOW_API_KEY，请在 .env 中设置")
 
-    provider_prefix = "openai" if provider == "siliconflow" else provider
-
     return LLM(
-        model=f"{provider_prefix}/{model}",
+        model=f"openai/{model}",
         base_url=SILICONFLOW_BASE_URL,
         api_key=api_key,
         temperature=TASK_TEMPERATURE.get(task_id, 0.5),

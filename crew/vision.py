@@ -48,7 +48,7 @@ def _call_vision_api(
     model = os.getenv(
         "AGENT_MODEL_PRODUCT_EXTRACT_MODEL",
         "Qwen/Qwen3-VL-32B-Instruct",
-    )
+    ).strip()
 
     user_text = f"{EXTRACT_PROMPT}\n\n产品描述：{description}"
     if retry_hint:

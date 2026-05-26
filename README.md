@@ -23,6 +23,12 @@ CrewMarket 面向电商运营与内容团队，通过多智能体协作，自动
 | 营销物料生成 | 海报布局、分镜、画面提示词与后续视频生成扩展 |
 | 结果整合 | JSON 结果统一收口，便于前端展示与后端接口对接 |
 
+## 当前运行方式
+
+- **首页主流程：** 前端采用分步串行调用，依次请求 `/api/product/analyze`、`/api/content/generate`、`/api/seo/optimize`、`/api/social/generate`、`/api/result/merge`
+- **保留入口：** `/api/pipeline/run` 作为后端一键编排、调试与未来批处理入口保留
+- **图片输入：** 支持首页上传图片或文字描述，识图链路由后端 AI Task 1 负责处理
+
 ## 智能体分工
 
 - **产品提取 Agent** — 识图、属性提取、卖点总结

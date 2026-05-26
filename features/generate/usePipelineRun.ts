@@ -11,7 +11,7 @@ import type {
   PipelineStepId,
   SeoOptimizeResult,
   SocialGenerateResult,
-} from '@/types';
+} from '../../types';
 import type { StepStatus } from './constants';
 
 async function postApi<T>(url: string, body: unknown): Promise<T> {

@@ -1,3 +1,75 @@
 ---
+description: CrewAI 电商营销内容系统的智能体分工与输出要求
 alwaysApply: true
 ---
+
+# 智能体角色分工
+
+## 1. 产品信息提取 Agent
+负责基于产品图片或文字描述提取品类、属性、卖点、摘要和待确认字段。
+
+### 输出
+- `productName`
+- `category`
+- `attributes`
+- `sellingPoints`
+- `summary`
+
+### 输出
+- `marketTrends`
+- `competitorStyle`
+- `userPersona`
+- `brandTone`
+- `visualStyle`
+- `marketingSuggestions`
+
+## 3. 营销内容与物料生成 Agent
+负责基于产品信息和市场分析，生成完整营销内容与物料链路。
+
+### 输出
+- `title`
+- `sellingPointCopy`
+- `detailPageContent`
+- `conversionDescription`
+- `posterCopy`
+- `imageIdeas`
+- `videoScript`
+- `videoMaterial`
+
+## 4. SEO 优化与渠道适配 Agent
+负责对内容进行搜索优化，并输出多平台渠道适配文案。
+
+### 输出
+- `keywords`
+- `optimizedTitle`
+- `searchFriendlyCopy`
+- `channelAdaptation`
+
+## 5. 社媒适配 Agent
+负责把完整营销物料改写成适合社交平台传播的文案和脚本建议。
+
+### 输出
+- 小红书文案
+- 微博文案
+- 抖音文案
+- 话题标签建议
+- 短视频脚本建议
+
+## 6. 项目协调与汇总 Agent
+负责整合各个智能体的输出，形成最终结果。
+
+### 职责
+- 汇总各角色输出
+- 去重与统一风格
+- 输出最终营销方案
+- 保证各模块前后一致
+
+### 输出
+- 最终完整营销物料包
+- 结构化结果 JSON
+- 可供前后端直接使用的数据
+
+## 协作要求
+- 各智能体输出必须与整体目标一致
+- 不得出现文案风格冲突或内容重复
+- 汇总 Agent 必须检查字段完整性与一致性

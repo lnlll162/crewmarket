@@ -51,9 +51,9 @@ export function PipelineProgress({ stepStatus, currentStep, compact }: PipelineP
     <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h3 className="font-semibold text-white">智能体协作流程</h3>
+          <h3 className="font-semibold text-white">首页生成流程</h3>
           <p className="text-xs text-zinc-500">
-            {isActive ? `${completedCount}/${PIPELINE_STEPS.length} 步已完成` : '6 个 Agent 依次协作'}
+            {isActive ? `${completedCount}/${PIPELINE_STEPS.length} 步已完成` : '按顺序执行产品提取、市场分析、内容生成、SEO 优化、社媒适配与汇总校验'}
           </p>
         </div>
         {isActive && (
@@ -72,8 +72,8 @@ export function PipelineProgress({ stepStatus, currentStep, compact }: PipelineP
         </div>
       )}
 
-      <ol className="space-y-0">
-        {PIPELINE_STEPS.map((step, index) => {
+      <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+        {PIPELINE_STEPS.map((step) => {
           const status = stepStatus[step.id];
           const styles = STATUS_STYLES[status];
           const isCurrent = currentStep === step.id;
@@ -82,33 +82,31 @@ export function PipelineProgress({ stepStatus, currentStep, compact }: PipelineP
           if (compact && !showDetail) return null;
 
           return (
-            <li key={step.id} className="relative flex gap-3">
-              {index < PIPELINE_STEPS.length - 1 && (
+            <li
+              key={step.id}
+              className="rounded-2xl border border-white/5 bg-white/[0.03] p-4"
+            >
+              <div className="flex gap-3">
                 <div
-                  className={`absolute left-[11px] top-7 h-[calc(100%-4px)] w-0.5 ${
-                    status === 'completed' ? 'bg-emerald-500/40' : 'bg-zinc-800'
-                  }`}
-                />
-              )}
-              <div
-                className={`relative z-10 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold ${styles.ring} ${styles.dot} text-white`}
-                style={isCurrent ? { animation: 'pulse 1.5s infinite' } : undefined}
-              >
-                {styles.icon}
-              </div>
-              <div className={`pb-5 ${compact ? 'pb-3' : ''}`}>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={`text-sm font-medium ${styles.label}`}>{step.label}</span>
-                  <span className="text-[10px] text-zinc-600">{step.agent}</span>
-                  {status === 'running' && (
-                    <Chip size="sm" color="secondary" variant="dot" className="h-5">
-                      进行中
-                    </Chip>
+                  className={`relative z-10 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold ${styles.ring} ${styles.dot} text-white`}
+                  style={isCurrent ? { animation: 'pulse 1.5s infinite' } : undefined}
+                >
+                  {styles.icon}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`text-sm font-medium ${styles.label}`}>{step.label}</span>
+                    <span className="text-[10px] text-zinc-600">{step.agent}</span>
+                    {status === 'running' && (
+                      <Chip size="sm" color="secondary" variant="dot" className="h-5">
+                        进行中
+                      </Chip>
+                    )}
+                  </div>
+                  {!compact && (
+                    <p className="mt-1 text-xs leading-relaxed text-zinc-500">{step.description}</p>
                   )}
                 </div>
-                {!compact && (
-                  <p className="mt-0.5 text-xs text-zinc-500">{step.description}</p>
-                )}
               </div>
             </li>
           );

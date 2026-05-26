@@ -1,4 +1,4 @@
-"""完整 6 步 Pipeline 编排。"""
+"""营销 Pipeline 编排：产品理解 → 市场与品牌策略 → 营销内容 → 营销物料 → 汇总。"""
 
 from __future__ import annotations
 
@@ -55,14 +55,14 @@ def _collect_product_pending(product: dict[str, Any]) -> list[str]:
 
 def _build_package(
     product: dict[str, Any],
-    market: dict[str, Any],
+    market_research: dict[str, Any],
     content: dict[str, Any],
     seo: dict[str, Any],
     social: dict[str, Any],
 ) -> dict[str, Any]:
     return {
         "product": product,
-        "market": market,
+        "market": market_research,
         "content": content,
         "seo": seo,
         "social": social,
@@ -80,15 +80,14 @@ def _programmatic_consistency_notes(
     if product_name and product_name not in content.get("title", ""):
         notes.append(f"标题未直接包含产品名「{product_name}」，请人工确认是否合适")
 
-    overlap = [kw for kw in seo.get("keywords", []) if kw in content.get("title", "")]
-    if len(overlap) < min(2, len(seo.get("keywords", []))):
-        notes.append("SEO 关键词与标题重叠较少，建议人工核对搜索意图")
-
-    selling_points = product.get("sellingPoints", {}).get("value", [])
+    title = content.get("title", "")
     detail = content.get("detailPageContent", "")
-    duplicated = [sp for sp in selling_points if isinstance(sp, str) and sp in detail]
-    if len(duplicated) >= 2:
-        notes.append("详情页与卖点列表存在较多重复表述，建议润色")
+    if title and detail and title in detail:
+        notes.append("详情页与标题重复较多，建议补充场景或用户收益表达")
+
+    seo_text = " ".join(str(v) for v in seo.values() if isinstance(v, str))
+    if title and seo_text and title in seo_text:
+        notes.append("SEO 与主标题重复较多，建议做平台差异化表达")
 
     if not notes:
         notes.append("各模块字段完整，已通过程序化一致性检查")
@@ -97,18 +96,31 @@ def _programmatic_consistency_notes(
 
 def _run_merge_step(
     product: dict[str, Any],
-    market: dict[str, Any],
+    market_research: dict[str, Any],
     content: dict[str, Any],
     seo: dict[str, Any],
     social: dict[str, Any],
     pending: list[str],
 ) -> dict[str, Any]:
-    package = _build_package(product, market, content, seo, social)
+    package = _build_package(
+        product,
+        market_research,
+        content,
+        seo,
+        social,
+    )
 
     try:
         review = run_json_task(
             merge_coordinator_agent(),
-            merge_review_prompt(product, market, content, seo, social, pending),
+            merge_review_prompt(
+                product,
+                market_research,
+                content,
+                seo,
+                social,
+                pending,
+            ),
             "合法 JSON 对象，仅含 consistencyNotes 与 pendingConfirmations",
             validate_merge_review,
             max_retries=2,
@@ -128,6 +140,7 @@ def _run_merge_step(
 
 
 def run_full_pipeline(payload: dict[str, Any]) -> dict[str, Any]:
+    """按精简版营销链路串行执行：产品理解 → 市场与品牌策略 → 营销内容 → 营销物料 → 汇总。"""
     pipeline_id = f"pl_{uuid.uuid4().hex[:12]}"
     description = payload.get("description", "")
     image_url = payload.get("imageUrl")
@@ -143,17 +156,17 @@ def run_full_pipeline(payload: dict[str, Any]) -> dict[str, Any]:
         steps["productExtract"] = product
         pending.extend(_collect_product_pending(product))
 
-        market = run_json_task(
+        market_research = run_json_task(
             market_research_agent(),
             market_research_prompt(product, options_text),
             "合法 JSON 对象，字段名必须完全一致",
             validate_market,
         )
-        steps["marketResearch"] = market
+        steps["marketResearch"] = market_research
 
         content = run_json_task(
             content_writer_agent(),
-            content_write_prompt(product, market, options_text),
+            content_write_prompt(product, market_research, options_text),
             "合法 JSON 对象",
             validate_content,
         )
@@ -176,7 +189,14 @@ def run_full_pipeline(payload: dict[str, Any]) -> dict[str, Any]:
         )
         steps["social"] = social
 
-        merged = _run_merge_step(product, market, content, seo, social, pending)
+        merged = _run_merge_step(
+            product,
+            market_research,
+            content,
+            seo,
+            social,
+            pending,
+        )
         steps["merged"] = merged
         pending = merged["pendingConfirmations"]
 
@@ -207,13 +227,13 @@ def run_analyze_only(payload: dict[str, Any]) -> dict[str, Any]:
         payload.get("imageUrl"),
         payload.get("imageBase64"),
     )
-    market = run_json_task(
+    market_research = run_json_task(
         market_research_agent(),
         market_research_prompt(product, options_text),
         "合法 JSON 对象",
         validate_market,
     )
-    return {"product": product, "market": market}
+    return {"product": product, "market": market_research}
 
 
 def run_content_only(payload: dict[str, Any]) -> dict[str, Any]:

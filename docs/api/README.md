@@ -15,8 +15,8 @@
 Next.js Route Handlers（业务层）
   │  内部调用
   ▼
-CrewAI 工作流（AI 执行层，6 个 Task）
-  │  每个 Task 绑定不同 LLM（按 Agent 选型）
+CrewAI 工作流（AI 执行层，6 个核心模块）
+  │  每个模块可绑定不同 LLM（按 Agent 选型）
   ▼
 大模型 API（外部，可跨 Provider，按 Task 配置）
 ```
@@ -24,23 +24,23 @@ CrewAI 工作流（AI 执行层，6 个 Task）
 | 层级 | 数量 | 谁调用 | 说明 |
 |------|------|--------|------|
 | **业务 REST API** | **6** | 前端 | 用户可见，统一 `{ code, message, data }` |
-| **AI Task（Agent 步骤）** | **6** | 后端内部 | 每步 1 个 Agent + 1 次 LLM 调用 |
+| **AI Task（Agent 步骤）** | **6 核心模块** | 后端内部 | 每模块 1 个 Agent + 1 次或多次 LLM 调用 |
 | **外部大模型 API** | **≥1 Provider** | CrewAI | **不同 Task 可使用不同模型/厂商**（与老师演示一致） |
 
 ---
 
 ## 一、业务 REST API（6 个）
 
-前端「点一次生成全部」时，**只调 1 个接口**；分步调试时可调其余 5 个。
+当前系统的**首页主流程**采用分步串行调用，便于展示进度、定位失败和支持单步重跑；`/api/pipeline/run` 保留为后端一键编排接口，可用于调试、服务端编排或未来异步任务模式。
 
 | # | 方法 | 路径 | 用途 | 前端场景 |
 |---|------|------|------|----------|
-| 1 | POST | `/api/pipeline/run` | **一键编排**：串行执行 AI 步骤 1→6 | 主按钮「生成全部」 |
-| 2 | POST | `/api/product/analyze` | 产品信息提取 + 市场分析 | 分步 / 调试 |
-| 3 | POST | `/api/content/generate` | 电商文案生成 | 分步 / 调试 |
-| 4 | POST | `/api/seo/optimize` | SEO 优化 | 分步 / 调试 |
-| 5 | POST | `/api/social/generate` | 社媒文案 | 分步 / 调试 |
-| 6 | POST | `/api/result/merge` | 汇总协调输出 | 分步 / 调试 |
+| 1 | POST | `/api/product/analyze` | 产品信息提取 + 市场分析 | 首页主流程第 1 步 |
+| 2 | POST | `/api/content/generate` | 营销内容与物料生成（标题、详情页、海报、图片、视频） | 首页主流程第 2 步 |
+| 3 | POST | `/api/seo/optimize` | 搜索优化与渠道适配 | 首页主流程第 3 步 |
+| 4 | POST | `/api/social/generate` | 社媒适配文案与脚本建议 | 首页主流程第 4 步 |
+| 5 | POST | `/api/result/merge` | 汇总协调输出 | 首页主流程第 5 步 |
+| 6 | POST | `/api/pipeline/run` | 后端一键编排：串行执行完整 AI 流程 | 调试 / 服务端编排 / 未来异步任务入口 |
 
 ### 统一返回结构
 
@@ -48,45 +48,66 @@ CrewAI 工作流（AI 执行层，6 个 Task）
 { "code": 0, "message": "success", "data": {} }
 ```
 
+> 说明：`data` 的具体结构由各接口返回类型决定，内容生成接口已支持 `posterCopy`、`imageIdeas`、`videoMaterial` 等完整物料字段；前端展示会按字段是否存在进行渲染。
+
 ```json
 { "code": 40001, "message": "参数缺失", "data": null }
 ```
 
 ---
 
-## 二、AI 执行层（6 个 Task）
+## 二、AI 执行层（6 个核心模块）
 
-与系统任务顺序一致，**每个 Task 对应 1 次 Agent + LLM 调用**（图片输入时第 1 步可能额外走 Vision）。
+与系统任务顺序一致，**每个核心模块对应 1 个或多个 Agent 调用**（图片输入时第 1 步可能额外走 Vision）。
 
 | # | AI Task ID | 对应 Agent | 触发方 | 输入 | 输出 |
 |---|------------|------------|--------|------|------|
 | 1 | `task.product_extract` | 产品信息提取 | `analyze` / `pipeline` | 图片 URL / base64、文字描述 | 品类、属性、卖点、待确认字段 |
-| 2 | `task.market_research` | 市场调研员 | `analyze` / `pipeline` | 产品信息 + 可选补充 | 趋势、竞品、用户画像、营销建议 |
-| 3 | `task.content_write` | 文案策划师 | `content/generate` / `pipeline` | 产品信息 + 市场分析 | 标题、卖点、详情页、转化描述 |
-| 4 | `task.seo_optimize` | SEO 优化师 | `seo/optimize` / `pipeline` | 文案 + 品类关键词 | 关键词列表、优化标题、搜索友好文案 |
-| 5 | `task.social_adapt` | 社交媒体运营 | `social/generate` / `pipeline` | 文案 + 产品卖点 | 小红书 / 微博 / 抖音文案、话题标签 |
-| 6 | `task.result_merge` | 汇总协调 Agent | `result/merge` / `pipeline` | 上述全部输出 | 完整营销物料包 JSON |
+| 2 | `task.market_research` | 市场与品牌策略师 | `analyze` / `pipeline` | 产品信息 + 可选补充 | 趋势、竞品、用户画像、品牌调性、视觉风格、营销建议 |
+| 3 | `task.content_write` | 营销内容与物料生成师 | `content/generate` / `pipeline` | 产品信息 + 市场与品牌策略 | 标题、卖点、详情页、转化描述、海报文案、图片创意、视频脚本、视频素材 |
+| 4 | `task.seo_optimize` | 渠道适配与搜索优化师 | `seo/optimize` / `pipeline` | 营销内容 + 品类关键词 | 关键词列表、优化标题、搜索友好文案、多平台适配文案 |
+| 5 | `task.social_adapt` | 社媒文案生成师 | `social/generate` / `pipeline` | 产品信息 + 营销内容 | 小红书、微博、抖音适配文案 |
+| 6 | `task.result_merge` | 营销结果审核员 | `result/merge` / `pipeline` | 上述全部输出 | 一致性建议、待确认项、完整营销物料包 JSON |
 
 ### 多模型策略（按 Task 选型）
 
-与老师讲解一致：**6 个 AI Task 各自绑定不同大模型**，按 Agent 职责选型，而非 6 步共用同一模型。
+与老师讲解一致：**6 个核心模块各自绑定不同大模型**，按 Agent 职责选型，而非全流程共用同一模型。
 
 | # | AI Task | 推荐模型类型 | 示例模型（可替换） | 选型理由 |
 |---|---------|--------------|-------------------|----------|
 | 1 | `task.product_extract` | 多模态 Vision | `Qwen/Qwen3-VL-32B-Instruct` | 需理解产品图片 + 文字 |
-| 2 | `task.market_research` | 长上下文 / 推理 | `deepseek-chat` / `gpt-4o` | 竞品与市场归纳 |
-| 3 | `task.content_write` | 中文创意文案 | `qwen-max` / `claude-3-5-sonnet` | 电商标题与详情页表达 |
-| 4 | `task.seo_optimize` | 结构化输出 | `gpt-4o-mini` / `glm-4` | 关键词提取与自然嵌入 |
-| 5 | `task.social_adapt` | 短文案 / 网感 | `doubao-pro` / `qwen-plus` | 小红书、微博、抖音风格 |
+| 2 | `task.market_research` | 长上下文 / 推理 | `deepseek-chat` / `gpt-4o` | 竞品、市场、品牌策略归纳 |
+| 3 | `task.content_write` | 中文创意文案 | `qwen-max` / `claude-3-5-sonnet` | 电商标题、详情页、脚本、海报、图片与视频物料 |
+| 4 | `task.seo_optimize` | 结构化输出 | `gpt-4o-mini` / `glm-4` | 关键词提取、搜索优化与自然嵌入 |
+| 5 | `task.social_adapt` | 社媒短文案 | `gpt-4o` / `doubao-pro-32k` | 多平台适配、短内容输出 |
 | 6 | `task.result_merge` | 强推理 / 一致性 | `gpt-4o` / `claude-3-5-sonnet` | 去重、统一口径、汇总 JSON |
 
 > 上表为**默认推荐**，实际以 `.env` 中 `AGENT_MODEL_*` 配置为准；CrewAI 中为每个 Agent 单独实例化 `LLM`。
 
+> 当前文档按**完整流程**描述，`task.content_write` 已覆盖视频脚本、海报文案，以及图片创意与视频素材的结构化输出。
+
+### 内容物料输出契约
+
+`task.content_write` / `POST /api/content/generate` 是完整物料链路的核心输出，必须包含：
+
+| 字段 | 含义 |
+|------|------|
+| `title` | 商品标题 |
+| `sellingPointCopy` | 3-5 条卖点文案 |
+| `detailPageContent` | 详情页正文 |
+| `conversionDescription` | 转化短描述 |
+| `posterCopy` | 海报标题、副标题、口号 |
+| `imageIdeas` | 商品主图、详情页/活动海报、社媒配图或短视频封面的图片创意 |
+| `videoScript` | 15-30 秒短视频脚本 |
+| `videoMaterial` | 视频钩子、分镜、口播、字幕/封面文案 |
+
+后端校验会对 `posterCopy`、`imageIdeas`、`videoMaterial` 做兜底归一化，保证前端和汇总结果拿到稳定字段。
+
 ### REST ↔ AI 映射
 
 ```
-POST /api/pipeline/run
-  └─ 内部串行调用 task 1 → 2 → 3 → 4 → 5 → 6
+前端首页主流程
+  └─ 串行调用 task 1 → 2 → 3 → 4 → 5 → 6
 
 POST /api/product/analyze
   └─ task.product_extract + task.market_research
@@ -102,6 +123,9 @@ POST /api/social/generate
 
 POST /api/result/merge
   └─ task.result_merge
+
+POST /api/pipeline/run
+  └─ 内部串行调用 task 1 → 2 → 3 → 4 → 5 → 6（保留的一键编排入口）
 ```
 
 ### 外部大模型 API（Provider 配置）
@@ -311,11 +335,29 @@ market_agent  = Agent(..., llm=get_llm("task.market_research"))
 
 完整字段见 [types 定义](../../types/index.ts)。
 
+### 分步接口返回字段对照
+
+- `POST /api/product/analyze`
+  - `product`
+  - `market`
+- `POST /api/content/generate`
+  - `content`
+- `POST /api/seo/optimize`
+  - `seo`
+- `POST /api/social/generate`
+  - `social`
+- `POST /api/result/merge`
+  - `package`
+  - `consistencyNotes`
+  - `pendingConfirmations`
+
+> 前端状态流里使用的步骤键仍保持为 `productExtract`、`marketResearch`、`content`、`seo`、`social`、`merged`，与 `PipelineRunResponseData.steps` 一致。
+
 ---
 
 ## 五、联调约定
 
 - 前端主流程：**仅调用** `POST /api/pipeline/run`
-- 后端实现：Route Handler 内调用 CrewAI Crew，按 Task 1→6 串行执行
+- 后端实现：Route Handler 内调用 CrewAI 工作流，按 Task 1→6 串行执行
 - Mock 阶段：可在业务层返回固定 JSON，AI 层尚未接入时不影响前端开发
 - 分步 API（2–6）供调试、单步重跑，**生产主路径不强制前端调用**

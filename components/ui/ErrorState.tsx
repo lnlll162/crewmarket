@@ -12,7 +12,7 @@ export function ErrorState({
       <p className="text-red-300">{message}</p>
       {onRetry && (
         <Button className="mt-4" color="danger" variant="flat" onPress={onRetry}>
-          重试
+          重新开始分步生成
         </Button>
       )}
     </div>

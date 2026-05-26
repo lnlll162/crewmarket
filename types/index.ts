@@ -46,7 +46,28 @@ export interface MarketResearchResult {
   marketTrends: string;
   competitorStyle: string;
   userPersona: string;
+  brandTone: string;
+  visualStyle: string;
   marketingSuggestions: string[];
+}
+
+export interface PosterCopy {
+  headline: string;
+  subheadline: string;
+  slogan: string;
+}
+
+export interface VisualAssetIdea {
+  title: string;
+  description: string;
+  usage: string;
+}
+
+export interface VideoMaterial {
+  hook: string;
+  scenes: string[];
+  voiceover: string;
+  caption: string;
 }
 
 export interface ContentGenerateResult {
@@ -54,12 +75,21 @@ export interface ContentGenerateResult {
   sellingPointCopy: string[];
   detailPageContent: string;
   conversionDescription: string;
+  videoScript: string;
+  posterCopy?: PosterCopy;
+  imageIdeas?: VisualAssetIdea[];
+  videoMaterial?: VideoMaterial;
 }
 
 export interface SeoOptimizeResult {
   keywords: string[];
   optimizedTitle: string;
   searchFriendlyCopy: string;
+  channelAdaptation: {
+    xiaohongshu: string;
+    weibo: string;
+    douyin: string;
+  };
 }
 
 export interface SocialPlatformCopy {

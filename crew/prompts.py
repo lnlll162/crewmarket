@@ -36,6 +36,19 @@ CONTENT_SCHEMA = """
     "headline": "海报主标题",
     "subheadline": "海报副标题",
     "slogan": "海报传播口号"
+  },
+  "imageIdeas": [
+    {
+      "title": "主图/海报/场景图创意标题",
+      "description": "画面主体、背景、构图、氛围、需要突出的产品卖点",
+      "usage": "适用场景，如商品主图、详情页、社媒配图、短视频封面"
+    }
+  ],
+  "videoMaterial": {
+    "hook": "短视频开场钩子",
+    "scenes": ["镜头1：画面 + 动作 + 卖点", "镜头2：画面 + 动作 + 卖点"],
+    "voiceover": "完整口播文案",
+    "caption": "字幕/封面文案"
   }
 }
 """.strip()
@@ -104,19 +117,23 @@ def content_write_prompt(
     attributes = product.get("attributes", {}).get("value", [])
     return f"""{GLOBAL_RULES}
 
-【任务】生成统一的营销内容与物料文案 JSON。
+【任务】生成完整营销内容与物料链路 JSON，必须覆盖电商文案、海报文案、图片创意、视频脚本与视频素材；输出必须可直接用于前端结果展示与后续视频/图片生成扩展。
 
 【输出 schema】
 {CONTENT_SCHEMA}
 
 【要求】
+- 必须输出 schema 中所有字段，字段名必须完全一致，不得省略 posterCopy、imageIdeas、videoMaterial。
 - sellingPointCopy 必须 3-5 条，格式「特点 - 用户收益」，基于已确认的产品属性。
 - detailPageContent 按「使用场景 → 核心体验 → 适合人群 → 购买理由」组织，禁止逐条复制 sellingPointCopy。
 - title 与 conversionDescription 必须有转化导向，但不夸大。
-- videoScript 输出 15-30 秒短视频脚本，可按镜头/分镜/口播结构组织。
 - posterCopy 要兼顾海报传播：headline 强吸睛，subheadline 补充卖点，slogan 简短有记忆点。
+- imageIdeas 至少 3 条，分别覆盖商品主图、详情页/活动海报、社媒配图或短视频封面；description 要能直接交给设计或图片生成模型使用。
+- videoScript 输出 15-30 秒短视频脚本，可按镜头/分镜/口播结构组织。
+- videoMaterial.scenes 至少 3 条，包含画面、动作、卖点；voiceover 是完整口播，caption 可作为视频封面或字幕。
+- 如当前任务只生成文本，也必须保留 imageIdeas 与 videoMaterial 的结构化输出，不得省略字段。
 - 优先使用以下已提取信息：属性={_dump(attributes)}，卖点={_dump(selling_points)}。
-- 结合市场分析中的品牌调性与视觉风格建议，保持文案口径一致。
+- 结合市场分析中的品牌调性与视觉风格建议，保持文案、图片创意、视频素材口径一致。
 
 【产品信息】
 {_dump(product)}
@@ -152,7 +169,7 @@ def seo_optimize_prompt(content: dict[str, Any], category: str) -> str:
 def social_adapt_prompt(product: dict[str, Any], content: dict[str, Any]) -> str:
     return f"""{GLOBAL_RULES}
 
-【任务】改写社媒传播文案 JSON。
+【任务】基于完整营销物料改写社媒传播文案 JSON，并补齐短视频脚本建议，确保与内容模块、图片创意和海报口径一致。
 
 【输出 schema】
 {SOCIAL_SCHEMA}
@@ -162,6 +179,7 @@ def social_adapt_prompt(product: dict[str, Any], content: dict[str, Any]) -> str
 - 小红书偏种草分享，微博偏话题传播，抖音偏口播/短视频；三平台内容不可完全相同。
 - 每条 hashtags 2-6 个，带 # 前缀。
 - scriptSuggestion 给出 15-30 秒短视频结构建议。
+- 输出必须是可直接展示的 JSON，不能输出解释文字或 markdown。
 
 【产品卖点】
 {_dump(product.get("sellingPoints", {}))}
