@@ -1,17 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import type {
-  AnalyzeResponseData,
-  ApiResponse,
-  ContentGenerateResult,
-  MergeResult,
-  PipelineRunRequest,
-  PipelineRunResponseData,
-  PipelineStepId,
-  SeoOptimizeResult,
-  SocialGenerateResult,
-} from '../../types';
+import type { ApiResponse, PipelineRunRequest, PipelineRunResponseData, PipelineStepId } from '@/types';
 import type { StepStatus } from './constants';
 
 async function postApi<T>(url: string, body: unknown): Promise<T> {
@@ -39,9 +29,7 @@ const INITIAL_STEP_STATUS: Record<PipelineStepId, StepStatus> = {
 export function usePipelineRun() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [stepStatus, setStepStatus] = useState<Record<PipelineStepId, StepStatus>>(
-    INITIAL_STEP_STATUS,
-  );
+  const [stepStatus, setStepStatus] = useState<Record<PipelineStepId, StepStatus>>(INITIAL_STEP_STATUS);
   const [currentStep, setCurrentStep] = useState<PipelineStepId | undefined>();
   const [result, setResult] = useState<PipelineRunResponseData | null>(null);
   const [steps, setSteps] = useState<PipelineRunResponseData['steps']>({});
@@ -59,91 +47,47 @@ export function usePipelineRun() {
     setSteps({});
   }, []);
 
-  const run = useCallback(
-    async (payload: PipelineRunRequest) => {
-      reset();
-      setLoading(true);
+  const run = useCallback(async (payload: PipelineRunRequest) => {
+    reset();
+    setLoading(true);
 
-      const nextSteps: PipelineRunResponseData['steps'] = {};
-      const pipelineId = `pipe-${Date.now()}`;
+    try {
+      setStep('productExtract', 'running');
+      setStep('marketResearch', 'running');
+      setStep('content', 'running');
+      setStep('seo', 'running');
+      setStep('social', 'running');
+      setStep('merged', 'running');
 
-      try {
-        setStep('productExtract', 'running');
-        setStep('marketResearch', 'running');
+      const data = await postApi<PipelineRunResponseData>('/api/pipeline/run', payload);
+      setSteps(data.steps ?? {});
+      setResult(data);
 
-        const analyze = await postApi<AnalyzeResponseData>('/api/product/analyze', payload);
-        nextSteps.productExtract = analyze.product;
-        nextSteps.marketResearch = analyze.market;
-        setSteps({ ...nextSteps });
-        setStep('productExtract', 'completed');
-        setStep('marketResearch', 'completed');
+      if (data.steps?.productExtract) setStep('productExtract', 'completed');
+      if (data.steps?.marketResearch) setStep('marketResearch', 'completed');
+      if (data.steps?.content) setStep('content', 'completed');
+      if (data.steps?.seo) setStep('seo', 'completed');
+      if (data.steps?.social) setStep('social', 'completed');
+      if (data.steps?.merged) setStep('merged', 'completed');
+      setCurrentStep(undefined);
 
-        setStep('content', 'running');
-        const content = await postApi<ContentGenerateResult>('/api/content/generate', {
-          product: analyze.product,
-          market: analyze.market,
-          options: payload.options,
-        });
-        nextSteps.content = content;
-        setSteps({ ...nextSteps });
-        setStep('content', 'completed');
-
-        setStep('seo', 'running');
-        const seo = await postApi<SeoOptimizeResult>('/api/seo/optimize', {
-          content,
-          category: analyze.product.category.value,
-        });
-        nextSteps.seo = seo;
-        setSteps({ ...nextSteps });
-        setStep('seo', 'completed');
-
-        setStep('social', 'running');
-        const sellingPoints = analyze.product.sellingPoints.value;
-        const social = await postApi<SocialGenerateResult>('/api/social/generate', {
-          content,
-          sellingPoints: Array.isArray(sellingPoints) ? sellingPoints : [sellingPoints],
-        });
-        nextSteps.social = social;
-        setSteps({ ...nextSteps });
-        setStep('social', 'completed');
-
-        setStep('merged', 'running');
-        const merged = await postApi<MergeResult>('/api/result/merge', {
-          product: analyze.product,
-          market: analyze.market,
-          content,
-          seo,
-          social,
-        });
-        nextSteps.merged = merged;
-        setSteps({ ...nextSteps });
-        setStep('merged', 'completed');
-        setCurrentStep(undefined);
-
-        setResult({
-          pipelineId,
-          status: 'completed',
-          steps: nextSteps,
-          result: merged,
-          pendingConfirmations: merged.pendingConfirmations,
-          generatedAt: new Date().toISOString(),
-        });
-      } catch (err) {
-        const message = err instanceof Error ? err.message : '生成失败';
-        setError(message);
-        setStepStatus((prev) => {
-          const next = { ...prev };
-          for (const key of Object.keys(next) as PipelineStepId[]) {
-            if (next[key] === 'running') next[key] = 'failed';
-          }
-          return next;
-        });
-      } finally {
-        setLoading(false);
+      if (data.status === 'failed') {
+        throw new Error(data.error?.message || 'Pipeline 执行失败');
       }
-    },
-    [reset, setStep],
-  );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '生成失败';
+      setError(message);
+      setStepStatus((prev) => {
+        const next = { ...prev };
+        for (const key of Object.keys(next) as PipelineStepId[]) {
+          if (next[key] === 'running') next[key] = 'failed';
+        }
+        return next;
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [reset, setStep]);
 
   return { loading, error, stepStatus, currentStep, steps, result, run, reset };
 }

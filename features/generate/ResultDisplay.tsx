@@ -10,7 +10,7 @@ import type {
   ProductExtractResult,
   SeoOptimizeResult,
   SocialGenerateResult,
-} from '../../types';
+} from '@/types';
 import { PLATFORM_LABELS } from './constants';
 
 function copyText(text: string) {
@@ -23,7 +23,7 @@ function StatusBadge({ status, note }: { status: FieldWithStatus['status']; note
       size="sm"
       variant="flat"
       color={status === 'confirmed' ? 'success' : 'warning'}
-      className="ml-2"
+      className="ml-2 bg-white/[0.06]"
     >
       {status === 'confirmed' ? '已确认' : '待确认'}
       {note ? ` · ${note}` : ''}
@@ -42,15 +42,15 @@ function FieldRow({
   return (
     <div className="min-w-0 space-y-1">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</span>
+        <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">{label}</span>
         <StatusBadge status={field.status} note={field.note} />
       </div>
       {values.length === 1 ? (
-        <p className="break-words text-sm text-zinc-200">{values[0]}</p>
+        <p className="break-words text-sm text-zinc-100">{values[0]}</p>
       ) : (
         <ul className="space-y-1">
           {values.map((v) => (
-            <li key={v} className="flex items-start gap-2 text-sm text-zinc-200">
+            <li key={v} className="flex items-start gap-2 text-sm text-zinc-100">
               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400" />
               {v}
             </li>
@@ -71,13 +71,13 @@ function SectionCard({
   onCopy?: () => void;
 }) {
   return (
-    <div className="min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-black/30 p-5 shadow-lg shadow-black/10">
+    <div className="min-w-0 overflow-hidden rounded-2xl border border-white/12 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h4 className="font-semibold text-white">{title}</h4>
         </div>
         {onCopy && (
-          <Button size="sm" variant="flat" onPress={onCopy}>
+          <Button size="sm" variant="flat" className="bg-white/[0.06] text-zinc-100" onPress={onCopy}>
             复制结果
           </Button>
         )}
@@ -170,6 +170,127 @@ export function MarketResultView({ data }: { data: MarketResearchResult }) {
   );
 }
 
+function GenerationStatusCard({
+  label,
+  data,
+}: {
+  label: string;
+  data?: {
+    status?: string;
+    requestId?: string;
+    url?: string;
+    prompt?: string;
+    message?: string;
+    error?: string;
+    timings?: Record<string, unknown>;
+    seed?: number | string;
+    images?: Array<{ url: string }>;
+    raw?: Record<string, unknown>;
+    jobId?: string;
+  };
+}) {
+  if (!data) return null;
+
+  const previewUrls = [
+    ...(data.images?.map((img) => img.url).filter(Boolean) ?? []),
+    ...(data.url ? [data.url] : []),
+  ];
+  const firstPreviewUrl = previewUrls[0];
+  const copyLink = (link: string) => {
+    void navigator.clipboard.writeText(link);
+  };
+
+  return (
+    <div className="rounded-xl border border-white/12 bg-white/[0.03] p-4 shadow-lg shadow-black/10">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">{label}</p>
+        <Chip size="sm" variant="flat" color={data.status === 'failed' ? 'danger' : data.status === 'completed' || data.url ? 'success' : 'warning'}>
+          {data.status === 'submitted' ? '已提交' : data.status === 'processing' ? '处理中' : data.status === 'completed' ? '已完成' : data.status === 'failed' ? '失败' : data.status ?? '待处理'}
+        </Chip>
+        {data.jobId && <Chip size="sm" variant="flat" color="default">job {data.jobId}</Chip>}
+        {data.requestId && <Chip size="sm" variant="flat" color="secondary">request {data.requestId}</Chip>}
+      </div>
+      {data.message && <p className="text-sm text-zinc-200">{data.message}</p>}
+      {data.prompt && <p className="mt-2 text-xs text-zinc-400">提示词：{data.prompt}</p>}
+      {label === '图片生成' && previewUrls.length > 0 && (
+        <div className="mt-3 space-y-3">
+          <a
+            href={firstPreviewUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="block overflow-hidden rounded-xl border border-white/10 bg-black/30 transition hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-950/20"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={firstPreviewUrl}
+              alt="生成图片预览"
+              className="h-auto w-full max-h-[420px] object-contain"
+            />
+          </a>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="flat" color="secondary" onPress={() => copyLink(firstPreviewUrl)}>
+              复制链接
+            </Button>
+            <Button size="sm" variant="flat" as="a" href={firstPreviewUrl} target="_blank" rel="noreferrer">
+              打开原图
+            </Button>
+          </div>
+          {previewUrls.length > 1 && (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {previewUrls.map((url, index) => (
+                <div key={url} className="rounded-xl border border-white/10 bg-black/20 p-2">
+                  <a href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt={`生成图片 ${index + 1}`}
+                      className="h-36 w-full object-cover"
+                    />
+                  </a>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <p className="truncate text-xs text-zinc-500">图片 {index + 1}</p>
+                    <Button size="sm" variant="light" onPress={() => copyLink(url)}>
+                      复制链接
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {data.url && label !== '图片生成' && (
+        <a
+          href={data.url}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 block break-all text-sm text-emerald-300 underline decoration-emerald-400/40 underline-offset-4 hover:text-emerald-200"
+        >
+          结果链接：{data.url}
+        </a>
+      )}
+      {data.images?.length && label !== '图片生成' ? (
+        <div className="mt-3 space-y-2">
+          {data.images.map((img) => (
+            <a
+              key={img.url}
+              href={img.url}
+              target="_blank"
+              rel="noreferrer"
+              className="block break-all text-sm text-emerald-300 underline decoration-emerald-400/40 underline-offset-4 hover:text-emerald-200"
+            >
+              图片链接：{img.url}
+            </a>
+          ))}
+        </div>
+      ) : null}
+      {data.seed !== undefined && <p className="mt-2 text-xs text-zinc-500">Seed：{String(data.seed)}</p>}
+      {data.timings && <p className="mt-2 text-xs text-zinc-500">Timings：{JSON.stringify(data.timings)}</p>}
+      {data.error && <p className="mt-2 text-sm text-red-300">错误：{data.error}</p>}
+    </div>
+  );
+}
+
 export function ContentResultView({ data }: { data: ContentGenerateResult }) {
   return (
     <SectionCard
@@ -195,6 +316,7 @@ export function ContentResultView({ data }: { data: ContentGenerateResult }) {
         )
       }
     >
+      <GenerationStatusCard label="图片生成" data={data.imageGeneration} />
       <div className="rounded-lg bg-gradient-to-r from-violet-500/20 to-fuchsia-500/10 p-4">
         <p className="mb-1 text-xs text-violet-300">内容总标题</p>
         <p className="break-words text-lg font-semibold text-white">{data.title}</p>
@@ -287,9 +409,9 @@ export function SeoResultView({ data }: { data: SeoOptimizeResult }) {
             `关键词：${data.keywords.join('、')}`,
             `优化标题：${data.optimizedTitle}`,
             `搜索友好文案：${data.searchFriendlyCopy}`,
-            `小红书：${data.channelAdaptation.xiaohongshu}`,
-            `微博：${data.channelAdaptation.weibo}`,
-            `抖音：${data.channelAdaptation.douyin}`,
+            `小红书：${data.channelAdaptation?.xiaohongshu ?? '暂无'}`,
+            `微博：${data.channelAdaptation?.weibo ?? '暂无'}`,
+            `抖音：${data.channelAdaptation?.douyin ?? '暂无'}`,
           ].join('\n\n'),
         )
       }
@@ -322,15 +444,15 @@ export function SeoResultView({ data }: { data: SeoOptimizeResult }) {
       <div className="grid gap-3 sm:grid-cols-3">
         <div>
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">小红书适配</p>
-          <p className="whitespace-pre-wrap text-sm text-zinc-300">{data.channelAdaptation.xiaohongshu}</p>
+          <p className="whitespace-pre-wrap text-sm text-zinc-300">{data.channelAdaptation?.xiaohongshu ?? '暂无'}</p>
         </div>
         <div>
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">微博适配</p>
-          <p className="whitespace-pre-wrap text-sm text-zinc-300">{data.channelAdaptation.weibo}</p>
+          <p className="whitespace-pre-wrap text-sm text-zinc-300">{data.channelAdaptation?.weibo ?? '暂无'}</p>
         </div>
         <div>
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">抖音适配</p>
-          <p className="whitespace-pre-wrap text-sm text-zinc-300">{data.channelAdaptation.douyin}</p>
+          <p className="whitespace-pre-wrap text-sm text-zinc-300">{data.channelAdaptation?.douyin ?? '暂无'}</p>
         </div>
       </div>
     </SectionCard>

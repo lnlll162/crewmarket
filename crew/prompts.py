@@ -49,6 +49,24 @@ CONTENT_SCHEMA = """
     "scenes": ["镜头1：画面 + 动作 + 卖点", "镜头2：画面 + 动作 + 卖点"],
     "voiceover": "完整口播文案",
     "caption": "字幕/封面文案"
+  },
+  "imageGeneration": {
+    "status": "pending | generated | failed",
+    "prompt": "用于图像模型的完整提示词",
+    "model": "可选：图像模型名",
+    "provider": "可选：siliconflow 等",
+    "url": "可选：首张生成结果 URL",
+    "urls": ["可选：生成结果 URL 列表"],
+    "error": "可选：错误说明"
+  },
+  "videoGeneration": {
+    "status": "pending | generated | failed",
+    "prompt": "用于视频模型的完整提示词",
+    "model": "可选：视频模型名",
+    "provider": "可选：siliconflow 等",
+    "url": "可选：首个生成结果 URL",
+    "urls": ["可选：生成结果 URL 列表"],
+    "error": "可选：错误说明"
   }
 }
 """.strip()

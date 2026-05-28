@@ -4,6 +4,15 @@ from typing import Literal
 
 SILICONFLOW_BASE_URL = "https://api.siliconflow.cn/v1"
 
+# 图像生成默认配置
+SILICONFLOW_IMAGE_MODEL = "baidu/ERNIE-Image-Turbo"
+SILICONFLOW_IMAGE_PATH = "/images/generations"
+
+# 视频生成默认配置
+SILICONFLOW_VIDEO_MODEL = "Wan-AI/Wan2.1-T2V-14B"
+SILICONFLOW_VIDEO_SUBMIT_PATH = "/video/submit"
+SILICONFLOW_VIDEO_STATUS_PATH = "/video/status"
+
 AiTaskId = Literal[
     "task.product_extract",
     "task.market_research",

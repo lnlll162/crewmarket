@@ -7,11 +7,12 @@ from typing import Any, Optional
 
 import httpx
 
-from config import SILICONFLOW_BASE_URL
+from config import SILICONFLOW_BASE_URL, SILICONFLOW_IMAGE_MODEL
 from prompts import GLOBAL_RULES
 from schemas import SchemaValidationError, parse_json, validate_product
 
 MAX_VISION_RETRIES = 3
+MAX_DESCRIPTION_CHARS = 1800
 
 EXTRACT_PROMPT = f"""{GLOBAL_RULES}
 
@@ -32,6 +33,13 @@ EXTRACT_PROMPT = f"""{GLOBAL_RULES}
 - 无法确认的信息 status 设为 pending 并在 note 说明原因。"""
 
 
+def _truncate_description(description: str) -> str:
+    text = (description or "").strip()
+    if len(text) <= MAX_DESCRIPTION_CHARS:
+        return text
+    return text[:MAX_DESCRIPTION_CHARS].rstrip() + "…"
+
+
 def _call_vision_api(
     description: str,
     image_url: Optional[str],
@@ -47,10 +55,11 @@ def _call_vision_api(
 
     model = os.getenv(
         "AGENT_MODEL_PRODUCT_EXTRACT_MODEL",
-        "Qwen/Qwen3-VL-32B-Instruct",
+        SILICONFLOW_IMAGE_MODEL,
     ).strip()
 
-    user_text = f"{EXTRACT_PROMPT}\n\n产品描述：{description}"
+    normalized_description = _truncate_description(description)
+    user_text = f"{EXTRACT_PROMPT}\n\n产品描述：{normalized_description}"
     if retry_hint:
         user_text += f"\n\n【上次输出不合格】{retry_hint}"
 

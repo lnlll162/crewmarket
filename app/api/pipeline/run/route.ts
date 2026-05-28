@@ -1,16 +1,17 @@
 import { API_CODES } from '@/constants/errors';
-import { fail, jsonResponse, success } from '@/lib/api-response';
-import { runCrewPipeline, validateProductInput } from '@/lib/run-crew';
+import { fail, jsonResponse, success } from '@/app/lib/api-response';
+import { runCrewPipeline, validateProductInput } from '@/app/lib/run-crew';
 import type { PipelineRunResponseData } from '@/types';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     if (!validateProductInput(body)) {
-      return jsonResponse(fail(API_CODES.PARAM_ERROR), 400);
+      return jsonResponse(fail(API_CODES.PARAM_ERROR, '参数错误'), 400);
     }
 
     const data = (await runCrewPipeline(body, 'full')) as PipelineRunResponseData;
+
 
     if (data.status === 'failed') {
       return jsonResponse(

@@ -123,6 +123,57 @@ def validate_market(data: Any) -> dict[str, Any]:
     }
 
 
+def _normalize_optional_generation(data: Any, label: str) -> dict[str, Any]:
+    if data is None:
+        return {"status": "pending"}
+    if not isinstance(data, dict):
+        raise SchemaValidationError(f"{label} 必须为对象")
+
+    status = data.get("status", "pending")
+    if status not in ("pending", "submitted", "processing", "completed", "generated", "failed"):
+        status = "pending"
+
+    result: dict[str, Any] = {"status": status}
+    prompt = data.get("prompt")
+    if prompt is not None:
+        result["prompt"] = _ensure_str(prompt, f"{label}.prompt")
+
+    for key in ("model", "provider", "url", "requestId", "error", "message"):
+        value = data.get(key)
+        if isinstance(value, str) and value.strip():
+            result[key] = value.strip()
+
+    images = data.get("images")
+    if isinstance(images, list):
+        normalized_images: list[dict[str, Any]] = []
+        for item in images:
+            if isinstance(item, dict):
+                url = item.get("url")
+                if isinstance(url, str) and url.strip():
+                    normalized_images.append({"url": url.strip()})
+        if normalized_images:
+            result["images"] = normalized_images
+
+    urls = data.get("urls")
+    if isinstance(urls, list):
+        normalized_urls = []
+        for item in urls:
+            if isinstance(item, str) and item.strip():
+                normalized_urls.append(item.strip())
+        if normalized_urls:
+            result["urls"] = normalized_urls
+
+    timings = data.get("timings")
+    if isinstance(timings, dict):
+        result["timings"] = timings
+
+    raw = data.get("raw")
+    if isinstance(raw, dict):
+        result["raw"] = raw
+
+    return result
+
+
 def validate_content(data: Any) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise SchemaValidationError("文案结果必须为 JSON 对象")
@@ -154,39 +205,47 @@ def validate_content(data: Any) -> dict[str, Any]:
     }
 
     poster = data.get("posterCopy")
-    if not isinstance(poster, dict):
-        raise SchemaValidationError("posterCopy 必须为对象，且必须由模型真实返回")
-    result["posterCopy"] = {
-        "headline": _ensure_str(poster.get("headline"), "posterCopy.headline"),
-        "subheadline": _ensure_str(poster.get("subheadline"), "posterCopy.subheadline"),
-        "slogan": _ensure_str(poster.get("slogan"), "posterCopy.slogan"),
-    }
+    if isinstance(poster, dict):
+        result["posterCopy"] = {
+            "headline": _ensure_str(poster.get("headline"), "posterCopy.headline"),
+            "subheadline": _ensure_str(poster.get("subheadline"), "posterCopy.subheadline"),
+            "slogan": _ensure_str(poster.get("slogan"), "posterCopy.slogan"),
+        }
 
     image_ideas_raw = data.get("imageIdeas")
-    if not isinstance(image_ideas_raw, list) or not image_ideas_raw:
-        raise SchemaValidationError("imageIdeas 必须为非空数组，且必须由模型真实返回")
     image_ideas: list[dict[str, Any]] = []
-    for index, item in enumerate(image_ideas_raw[:5]):
-        if not isinstance(item, dict):
-            raise SchemaValidationError(f"imageIdeas[{index}] 必须为对象")
-        image_ideas.append(
-            {
-                "title": _ensure_str(item.get("title"), f"imageIdeas[{index}].title"),
-                "description": _ensure_str(item.get("description"), f"imageIdeas[{index}].description"),
-                "usage": _ensure_str(item.get("usage"), f"imageIdeas[{index}].usage"),
-            }
-        )
+    if isinstance(image_ideas_raw, list):
+        for index, item in enumerate(image_ideas_raw[:5]):
+            if not isinstance(item, dict):
+                continue
+            try:
+                image_ideas.append(
+                    {
+                        "title": _ensure_str(item.get("title"), f"imageIdeas[{index}].title"),
+                        "description": _ensure_str(item.get("description"), f"imageIdeas[{index}].description"),
+                        "usage": _ensure_str(item.get("usage"), f"imageIdeas[{index}].usage"),
+                    }
+                )
+            except SchemaValidationError:
+                continue
     result["imageIdeas"] = image_ideas
 
     video_material = data.get("videoMaterial")
-    if not isinstance(video_material, dict):
-        raise SchemaValidationError("videoMaterial 必须为对象，且必须由模型真实返回")
-    result["videoMaterial"] = {
-        "hook": _ensure_str(video_material.get("hook"), "videoMaterial.hook"),
-        "scenes": _ensure_str_list(video_material.get("scenes"), "videoMaterial.scenes", min_len=2, max_len=6),
-        "voiceover": _ensure_str(video_material.get("voiceover"), "videoMaterial.voiceover"),
-        "caption": _ensure_str(video_material.get("caption"), "videoMaterial.caption"),
-    }
+    if isinstance(video_material, dict):
+        try:
+            result["videoMaterial"] = {
+                "hook": _ensure_str(video_material.get("hook"), "videoMaterial.hook"),
+                "scenes": _ensure_str_list(video_material.get("scenes"), "videoMaterial.scenes", min_len=2, max_len=6),
+                "voiceover": _ensure_str(video_material.get("voiceover"), "videoMaterial.voiceover"),
+                "caption": _ensure_str(video_material.get("caption"), "videoMaterial.caption"),
+            }
+        except SchemaValidationError:
+            result["videoMaterial"] = {"hook": "", "scenes": [], "voiceover": "", "caption": ""}
+    else:
+        result["videoMaterial"] = {"hook": "", "scenes": [], "voiceover": "", "caption": ""}
+
+    result["imageGeneration"] = _normalize_optional_generation(data.get("imageGeneration"), "imageGeneration")
+    result["videoGeneration"] = _normalize_optional_generation(data.get("videoGeneration"), "videoGeneration")
 
     return result
 
@@ -205,10 +264,19 @@ def validate_seo(data: Any) -> dict[str, Any]:
     if len(optimized_title) < 8 or len(optimized_title) > 70:
         raise SchemaValidationError("optimizedTitle 长度应在 8–70 字之间")
 
+    channel_adaptation = data.get("channelAdaptation")
+    if not isinstance(channel_adaptation, dict):
+        raise SchemaValidationError("channelAdaptation 必须为对象")
+
     return {
         "keywords": keywords,
         "optimizedTitle": optimized_title,
         "searchFriendlyCopy": _ensure_str(data.get("searchFriendlyCopy"), "searchFriendlyCopy"),
+        "channelAdaptation": {
+            "xiaohongshu": _ensure_str(channel_adaptation.get("xiaohongshu"), "channelAdaptation.xiaohongshu"),
+            "weibo": _ensure_str(channel_adaptation.get("weibo"), "channelAdaptation.weibo"),
+            "douyin": _ensure_str(channel_adaptation.get("douyin"), "channelAdaptation.douyin"),
+        },
     }
 
 

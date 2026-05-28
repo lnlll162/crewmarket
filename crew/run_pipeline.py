@@ -11,8 +11,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# 加载项目根目录 .env
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+# 加载项目根目录 .env，强制覆盖已有环境变量，避免旧占位值残留
+load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=True)
 
 from config import TASK_ENV_PREFIX  # noqa: E402
 from pipeline import (  # noqa: E402
@@ -52,8 +52,18 @@ def validate_runtime_config() -> None:
         if provider == "siliconflow" and not model:
             raise ValueError(f"{task_id} 未配置 {prefix}_MODEL")
 
+    if not (os.getenv("AGENT_IMAGE_MODEL") or "").strip():
+        os.environ["AGENT_IMAGE_MODEL"] = os.getenv("AGENT_IMAGE_MODEL", "black-forest-labs/FLUX.1-schnell")
+    if not (os.getenv("AGENT_VIDEO_MODEL") or "").strip():
+        os.environ["AGENT_VIDEO_MODEL"] = os.getenv("AGENT_VIDEO_MODEL", "Wan-AI/Wan2.1-T2V-14B")
+
 
 def main() -> None:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8")
+
     validate_runtime_config()
     parser = argparse.ArgumentParser()
     parser.add_argument(

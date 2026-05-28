@@ -70,6 +70,36 @@ export interface VideoMaterial {
   caption: string;
 }
 
+export interface ImageGenerationResult {
+  status: 'pending' | 'submitted' | 'processing' | 'completed' | 'generated' | 'failed';
+  prompt?: string;
+  model?: string;
+  provider?: LlmProviderId;
+  url?: string;
+  urls?: string[];
+  images?: Array<{ url: string }>;
+  timings?: Record<string, unknown>;
+  seed?: number | string;
+  raw?: Record<string, unknown>;
+  error?: string;
+  message?: string;
+}
+
+export interface VideoGenerationResult {
+  status: 'pending' | 'submitted' | 'processing' | 'completed' | 'generated' | 'failed';
+  prompt?: string;
+  model?: string;
+  provider?: LlmProviderId;
+  requestId?: string;
+  url?: string;
+  urls?: string[];
+  timings?: Record<string, unknown>;
+  seed?: number | string;
+  raw?: Record<string, unknown>;
+  error?: string;
+  message?: string;
+}
+
 export interface ContentGenerateResult {
   title: string;
   sellingPointCopy: string[];
@@ -79,6 +109,9 @@ export interface ContentGenerateResult {
   posterCopy?: PosterCopy;
   imageIdeas?: VisualAssetIdea[];
   videoMaterial?: VideoMaterial;
+  imageGeneration?: ImageGenerationResult;
+  videoGeneration?: VideoGenerationResult;
+  videoJobId?: string;
 }
 
 export interface SeoOptimizeResult {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Card, CardBody, Input, Tab, Tabs, Textarea } from '@heroui/react';
+import { Button, Card, CardBody, Tab, Tabs } from '@heroui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -77,60 +77,62 @@ export function GenerateWorkspace() {
   }, [hasPartialResults]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 text-zinc-100">
       <div className="grid gap-8 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)] xl:items-start">
-        <Card className="border border-white/10 bg-gradient-to-b from-white/[0.07] to-transparent shadow-xl shadow-violet-950/20 xl:sticky xl:top-6">
+        <Card className="border border-white/12 bg-gradient-to-b from-white/[0.10] via-white/[0.06] to-white/[0.03] shadow-2xl shadow-black/30 backdrop-blur-xl xl:sticky xl:top-6">
           <CardBody className="gap-5 p-6">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">CREWAI · 多智能体</p>
-              <h2 className="mt-2 text-xl font-semibold text-white">产品输入</h2>
-              <p className="mt-1 text-sm text-zinc-500">填写描述并可选上传图片，按步骤串行启动生成流程</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-200/90">CREWAI · 多智能体</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">产品输入</h2>
+              <p className="mt-1 text-sm text-zinc-400">填写描述并可选上传图片，按步骤串行启动生成流程</p>
             </div>
-            <Textarea
-              label="产品描述"
-              placeholder="描述产品功能、材质、适用场景、目标人群…"
-              value={description}
-              onValueChange={setDescription}
-              minRows={6}
-              classNames={{
-                inputWrapper:
-                  'min-h-[148px] rounded-2xl border border-white/10 bg-black/30 px-4 py-3 shadow-inner shadow-black/20 transition focus-within:border-violet-500/50 focus-within:ring-2 focus-within:ring-violet-500/20',
-                label: 'text-zinc-200 text-sm font-medium',
-                input: 'text-white placeholder:text-zinc-500',
-              }}
-              isDisabled={loading}
-            />
+            <div className="space-y-2">
+              <label htmlFor="product-description" className="text-sm font-medium text-zinc-100">
+                产品描述
+              </label>
+              <textarea
+                id="product-description"
+                placeholder="描述产品功能、材质、适用场景、目标人群…"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={7}
+                disabled={loading}
+                className="min-w-0 w-full rounded-2xl border border-white/12 bg-white/[0.04] px-4 py-3 text-white shadow-inner shadow-black/15 transition outline-none placeholder:text-zinc-500 focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/20 disabled:cursor-not-allowed disabled:opacity-60 resize-y leading-relaxed whitespace-pre-wrap break-words overflow-y-auto"
+              />
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Input
-                label="产品名称（可选）"
-                value={productName}
-                onValueChange={setProductName}
-                isDisabled={loading}
-                classNames={{
-                  inputWrapper:
-                    'rounded-2xl border border-white/10 bg-black/30 px-4 shadow-inner shadow-black/20 transition focus-within:border-violet-500/50 focus-within:ring-2 focus-within:ring-violet-500/20',
-                  label: 'text-zinc-200 text-sm font-medium',
-                  input: 'text-white placeholder:text-zinc-500',
-                }}
-              />
-              <Input
-                label="品类（可选）"
-                value={category}
-                onValueChange={setCategory}
-                isDisabled={loading}
-                classNames={{
-                  inputWrapper:
-                    'rounded-2xl border border-white/10 bg-black/30 px-4 shadow-inner shadow-black/20 transition focus-within:border-violet-500/50 focus-within:ring-2 focus-within:ring-violet-500/20',
-                  label: 'text-zinc-200 text-sm font-medium',
-                  input: 'text-white placeholder:text-zinc-500',
-                }}
-              />
+              <div className="space-y-2">
+                <label htmlFor="product-name" className="text-sm font-medium text-zinc-200">
+                  产品名称（可选）
+                </label>
+                <input
+                  id="product-name"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  disabled={loading}
+                  placeholder="例如：便携式搅拌杯"
+                  className="min-w-0 w-full rounded-2xl border border-white/12 bg-white/[0.04] px-4 py-3 text-white shadow-inner shadow-black/15 transition outline-none placeholder:text-zinc-500 focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/20 disabled:cursor-not-allowed disabled:opacity-60"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="category" className="text-sm font-medium text-zinc-200">
+                  品类（可选）
+                </label>
+                <input
+                  id="category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  disabled={loading}
+                  placeholder="例如：厨房家电"
+                  className="min-w-0 w-full rounded-2xl border border-white/12 bg-white/[0.04] px-4 py-3 text-white shadow-inner shadow-black/15 transition outline-none placeholder:text-zinc-500 focus:border-violet-400/60 focus:ring-2 focus:ring-violet-400/20 disabled:cursor-not-allowed disabled:opacity-60"
+                />
+              </div>
             </div>
             <div>
               <p className="mb-2 text-sm text-zinc-400">产品图片（可选，支持识图）</p>
-              <div className="rounded-2xl border border-white/10 bg-black/25 p-3 shadow-inner shadow-black/20">
+              <div className="rounded-2xl border border-white/12 bg-white/[0.03] p-3 shadow-inner shadow-black/15">
                 <div className="grid gap-3 sm:grid-cols-[128px_minmax(0,1fr)]">
-                  <div className="flex h-28 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-slate-950/70">
+                  <div className="flex h-28 items-center justify-center overflow-hidden rounded-xl border border-white/12 bg-white/[0.03]">
                     {imagePreview ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={imagePreview} alt="产品图片预览" className="h-full w-full object-contain" />
@@ -140,10 +142,10 @@ export function GenerateWorkspace() {
                   </div>
                   <div className="flex min-w-0 flex-col justify-center gap-3">
                     <div>
-                      <p className="text-sm font-medium text-zinc-200">
+                      <p className="text-sm font-medium text-zinc-100">
                         {imagePreview ? '图片已选择' : '上传产品图片'}
                       </p>
-                      <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                      <p className="mt-1 text-xs leading-relaxed text-zinc-400">
                         支持 JPG、PNG、WEBP。图片会用于识别产品外观、材质和使用场景。
                       </p>
                     </div>
@@ -197,7 +199,7 @@ export function GenerateWorkspace() {
             <Button
               color="secondary"
               size="lg"
-              className="bg-gradient-to-r from-violet-600 to-fuchsia-600 font-semibold shadow-lg shadow-violet-950/30"
+              className="bg-gradient-to-r from-violet-500 via-violet-600 to-fuchsia-500 font-semibold shadow-lg shadow-violet-950/25"
               isLoading={loading}
               isDisabled={!description.trim()}
               onPress={handleGenerate}
@@ -251,6 +253,13 @@ export function GenerateWorkspace() {
                       <EmptyState message="汇总结果不可用" />
                     )}
                   </Tab>
+                  <Tab key="pipeline" title="流程字段">
+                    <div className="space-y-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-300">
+                      <p>上方输入字段：产品描述、产品名称、品类、图片</p>
+                      <p>实际生成字段：产品提取、市场分析、内容文案、SEO、社媒、汇总</p>
+                      <p className="text-zinc-500">说明：输入字段是触发条件，生成字段是模型输出结果，两者本来就不一样。</p>
+                    </div>
+                  </Tab>
                   <Tab key="product" title="产品">
                     {steps.productExtract ? (
                       <ProductResultView data={steps.productExtract} />
@@ -298,7 +307,7 @@ export function GenerateWorkspace() {
                 key="loading-hint"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-center text-sm text-violet-200"
+                className="rounded-2xl border border-violet-400/20 bg-white/[0.04] px-4 py-3 text-center text-sm text-violet-100 shadow-lg shadow-black/10"
               >
                 首个步骤完成后将自动展示内容，请耐心等待…
               </motion.div>

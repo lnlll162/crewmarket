@@ -14,6 +14,8 @@ from agents import (
     seo_optimizer_agent,
     social_media_agent,
 )
+from config import SILICONFLOW_IMAGE_MODEL, SILICONFLOW_VIDEO_MODEL
+from generation import generate_image
 from prompts import (
     content_write_prompt,
     market_research_prompt,
@@ -30,6 +32,9 @@ from schemas import (
     validate_social,
 )
 from vision import extract_product
+
+IMAGE_MODEL = SILICONFLOW_IMAGE_MODEL
+VIDEO_MODEL = SILICONFLOW_VIDEO_MODEL
 
 
 def _now_iso() -> str:
@@ -67,6 +72,40 @@ def _build_package(
         "seo": seo,
         "social": social,
         "mergedAt": _now_iso(),
+    }
+
+
+def _build_generation_payload(content: dict[str, Any], product: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    image_ideas = content.get("imageIdeas") or []
+    video_material = content.get("videoMaterial") or {"hook": "", "scenes": [], "voiceover": "", "caption": ""}
+    poster_copy = content.get("posterCopy") or {}
+    image_prompt = "\n".join([
+        f"产品：{product.get('summary', '')}",
+        f"标题：{content.get('title', '')}",
+        f"海报：{poster_copy.get('headline', '')} / {poster_copy.get('subheadline', '')}",
+        f"创意：{json.dumps(image_ideas, ensure_ascii=False)}",
+    ]).strip()
+    video_prompt = "\n".join([
+        f"产品：{product.get('summary', '')}",
+        f"脚本：{content.get('videoScript', '')}",
+        f"素材：{json.dumps(video_material, ensure_ascii=False)}",
+    ]).strip()
+    try:
+        image_generation = generate_image(image_prompt, model=IMAGE_MODEL)
+    except Exception as exc:
+        image_generation = {
+            "status": "failed",
+            "prompt": image_prompt,
+            "provider": "siliconflow",
+            "model": IMAGE_MODEL,
+            "error": str(exc),
+        }
+    return image_generation, {
+        "status": "disabled",
+        "prompt": video_prompt,
+        "provider": "siliconflow",
+        "model": VIDEO_MODEL,
+        "message": "视频能力已从主流程移除，作为独立模块保留",
     }
 
 
@@ -170,6 +209,9 @@ def run_full_pipeline(payload: dict[str, Any]) -> dict[str, Any]:
             "合法 JSON 对象",
             validate_content,
         )
+        image_generation, video_generation = _build_generation_payload(content, product)
+        content["imageGeneration"] = image_generation
+        content["videoGeneration"] = video_generation
         steps["content"] = content
 
         category = product.get("category", {}).get("value", "")
@@ -240,12 +282,16 @@ def run_content_only(payload: dict[str, Any]) -> dict[str, Any]:
     product = payload.get("product") or {}
     market = payload.get("market") or {}
     options_text = _options_text(payload.get("options"))
-    return run_json_task(
+    content = run_json_task(
         content_writer_agent(),
         content_write_prompt(product, market, options_text),
         "合法 JSON 对象",
         validate_content,
     )
+    image_generation, video_generation = _build_generation_payload(content, product)
+    content["imageGeneration"] = image_generation
+    content["videoGeneration"] = video_generation
+    return content
 
 
 def run_seo_only(payload: dict[str, Any]) -> dict[str, Any]:
