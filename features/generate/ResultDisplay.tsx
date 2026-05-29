@@ -40,17 +40,17 @@ function FieldRow({
 }) {
   const values = Array.isArray(field.value) ? field.value : [field.value];
   return (
-    <div className="min-w-0 space-y-1">
+    <div className="min-w-0 space-y-1 rounded-[18px] border border-violet-400/12 bg-white/[0.03] px-4 py-3 transition duration-200 hover:border-violet-300/28 hover:bg-white/[0.05]">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">{label}</span>
+        <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</span>
         <StatusBadge status={field.status} note={field.note} />
       </div>
       {values.length === 1 ? (
-        <p className="break-words text-sm text-zinc-100">{values[0]}</p>
+        <p className="break-words text-sm leading-relaxed text-zinc-100">{values[0]}</p>
       ) : (
         <ul className="space-y-1">
           {values.map((v) => (
-            <li key={v} className="flex items-start gap-2 text-sm text-zinc-100">
+            <li key={v} className="flex items-start gap-2 text-sm leading-relaxed text-zinc-100">
               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400" />
               {v}
             </li>
@@ -65,19 +65,27 @@ function SectionCard({
   title,
   children,
   onCopy,
+  tone,
 }: {
   title: string;
   children: ReactNode;
   onCopy?: () => void;
+  tone: {
+    shell: string;
+    header: string;
+    button: string;
+  };
 }) {
   return (
-    <div className="min-w-0 overflow-hidden rounded-2xl border border-white/12 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div className={`group relative min-w-0 overflow-hidden rounded-[28px] p-5 shadow-[0_24px_88px_rgba(0,0,0,0.3)] backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_96px_rgba(0,0,0,0.36)] ${tone.shell}`}>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.06),transparent_34%)]" />
+      <div className="relative mb-5 flex flex-wrap items-center justify-between gap-3 pb-4 transition-colors">
         <div>
-          <h4 className="font-semibold text-white">{title}</h4>
+          <p className={`text-[11px] font-semibold uppercase tracking-[0.26em] ${tone.header}`}>结果模块</p>
+          <h4 className="mt-1 text-lg font-semibold text-white">{title}</h4>
         </div>
         {onCopy && (
-          <Button size="sm" variant="flat" className="bg-white/[0.06] text-zinc-100" onPress={onCopy}>
+          <Button size="sm" variant="flat" className={`border bg-white/5 ${tone.button}`} onPress={onCopy}>
             复制结果
           </Button>
         )}
@@ -91,6 +99,11 @@ export function ProductResultView({ data }: { data: ProductExtractResult }) {
   return (
     <SectionCard
       title="产品提取结果"
+      tone={{
+        shell: 'bg-[linear-gradient(180deg,rgba(18,29,44,0.96),rgba(10,15,24,0.96))]',
+        header: 'text-sky-200',
+        button: 'text-sky-100 hover:text-white',
+      }}
       onCopy={() =>
         copyText(
           [
@@ -120,6 +133,11 @@ export function MarketResultView({ data }: { data: MarketResearchResult }) {
   return (
     <SectionCard
       title="市场分析结果"
+      tone={{
+        shell: 'bg-[linear-gradient(180deg,rgba(42,25,18,0.96),rgba(22,14,10,0.96))]',
+        header: 'text-orange-200',
+        button: 'text-orange-100 hover:text-white',
+      }}
       onCopy={() =>
         copyText(
           [
@@ -201,7 +219,7 @@ function GenerationStatusCard({
   };
 
   return (
-    <div className="rounded-xl border border-white/12 bg-white/[0.03] p-4 shadow-lg shadow-black/10">
+    <div className="rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-4 shadow-[0_16px_42px_rgba(0,0,0,0.18)] transition duration-200 hover:-translate-y-0.5 hover:bg-white/[0.07]">
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">{label}</p>
         <Chip size="sm" variant="flat" color={data.status === 'failed' ? 'danger' : data.status === 'completed' || data.url ? 'success' : 'warning'}>
@@ -218,7 +236,7 @@ function GenerationStatusCard({
             href={firstPreviewUrl}
             target="_blank"
             rel="noreferrer"
-            className="block overflow-hidden rounded-xl border border-white/10 bg-black/30 transition hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-950/20"
+            className="block overflow-hidden rounded-[18px] border border-violet-400/14 bg-black/30 transition hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-950/20"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -228,17 +246,17 @@ function GenerationStatusCard({
             />
           </a>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="flat" color="secondary" onPress={() => copyLink(firstPreviewUrl)}>
+            <Button size="sm" variant="flat" color="secondary" onPress={() => copyLink(firstPreviewUrl)} className="border border-violet-400/18 bg-white/5 text-violet-100">
               复制链接
             </Button>
-            <Button size="sm" variant="flat" as="a" href={firstPreviewUrl} target="_blank" rel="noreferrer">
+            <Button size="sm" variant="flat" as="a" href={firstPreviewUrl} target="_blank" rel="noreferrer" className="border border-violet-400/18 bg-white/5 text-violet-100">
               打开原图
             </Button>
           </div>
           {previewUrls.length > 1 && (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {previewUrls.map((url, index) => (
-                <div key={url} className="rounded-xl border border-white/10 bg-black/20 p-2">
+                <div key={url} className="rounded-[18px] border border-violet-400/14 bg-black/20 p-2">
                   <a href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -295,6 +313,11 @@ export function ContentResultView({ data }: { data: ContentGenerateResult }) {
   return (
     <SectionCard
       title="内容生成结果"
+      tone={{
+        shell: 'bg-[linear-gradient(180deg,rgba(34,20,48,0.96),rgba(18,12,26,0.96))] hover:shadow-[0_28px_110px_rgba(0,0,0,0.42)] hover:scale-[1.01]',
+        header: 'text-fuchsia-200',
+        button: 'text-fuchsia-100 hover:text-white',
+      }}
       onCopy={() =>
         copyText(
           [
@@ -317,7 +340,7 @@ export function ContentResultView({ data }: { data: ContentGenerateResult }) {
       }
     >
       <GenerationStatusCard label="图片生成" data={data.imageGeneration} />
-      <div className="rounded-lg bg-gradient-to-r from-violet-500/20 to-fuchsia-500/10 p-4">
+      <div className="rounded-[22px] border border-violet-400/14 bg-gradient-to-r from-violet-500/16 to-fuchsia-500/10 p-4 shadow-[0_14px_36px_rgba(0,0,0,0.16)] ring-1 ring-violet-400/10">
         <p className="mb-1 text-xs text-violet-300">内容总标题</p>
         <p className="break-words text-lg font-semibold text-white">{data.title}</p>
       </div>
@@ -325,7 +348,7 @@ export function ContentResultView({ data }: { data: ContentGenerateResult }) {
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">卖点文案</p>
         <div className="flex flex-wrap gap-2">
           {data.sellingPointCopy.map((sp) => (
-            <Chip key={sp} variant="flat" color="secondary">
+            <Chip key={sp} variant="flat" color="secondary" className="border border-violet-400/18 bg-violet-500/12 text-violet-100">
               {sp}
             </Chip>
           ))}
@@ -346,17 +369,17 @@ export function ContentResultView({ data }: { data: ContentGenerateResult }) {
         <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-zinc-300">{data.videoScript}</p>
       </div>
       <div className="grid gap-3 lg:grid-cols-3 sm:grid-cols-2">
-        <div className="rounded-lg bg-white/[0.03] p-3">
-          <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">海报标题</p>
-          <p className="text-sm leading-relaxed text-zinc-200">{data.posterCopy?.headline ?? '暂无'}</p>
+        <div className="rounded-[18px] border border-fuchsia-400/14 bg-fuchsia-500/8 p-3 transition duration-200 hover:border-fuchsia-300/28 hover:bg-fuchsia-500/10">
+          <p className="mb-1 text-xs font-medium uppercase tracking-wide text-fuchsia-200/80">海报标题</p>
+          <p className="text-sm leading-relaxed text-zinc-100">{data.posterCopy?.headline ?? '暂无'}</p>
         </div>
-        <div className="rounded-lg bg-white/[0.03] p-3">
-          <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">海报副标题</p>
-          <p className="text-sm leading-relaxed text-zinc-200">{data.posterCopy?.subheadline ?? '暂无'}</p>
+        <div className="rounded-[18px] border border-fuchsia-400/14 bg-fuchsia-500/8 p-3 transition duration-200 hover:border-fuchsia-300/28 hover:bg-fuchsia-500/10">
+          <p className="mb-1 text-xs font-medium uppercase tracking-wide text-fuchsia-200/80">海报副标题</p>
+          <p className="text-sm leading-relaxed text-zinc-100">{data.posterCopy?.subheadline ?? '暂无'}</p>
         </div>
-        <div className="rounded-lg bg-white/[0.03] p-3">
-          <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">海报口号</p>
-          <p className="text-sm leading-relaxed text-zinc-200">{data.posterCopy?.slogan ?? '暂无'}</p>
+        <div className="rounded-[18px] border border-fuchsia-400/14 bg-fuchsia-500/8 p-3 transition duration-200 hover:border-fuchsia-300/28 hover:bg-fuchsia-500/10">
+          <p className="mb-1 text-xs font-medium uppercase tracking-wide text-fuchsia-200/80">海报口号</p>
+          <p className="text-sm leading-relaxed text-zinc-100">{data.posterCopy?.slogan ?? '暂无'}</p>
         </div>
       </div>
       <div>
@@ -364,10 +387,10 @@ export function ContentResultView({ data }: { data: ContentGenerateResult }) {
         <div className="space-y-2">
           {(data.imageIdeas ?? []).length > 0 ? (
             (data.imageIdeas ?? []).map((item) => (
-              <div key={`${item.title}-${item.usage}`} className="rounded-lg bg-white/[0.03] p-3">
+              <div key={`${item.title}-${item.usage}`} className="rounded-lg border border-fuchsia-400/12 bg-fuchsia-500/6 p-3 transition duration-200 hover:border-fuchsia-300/22 hover:bg-fuchsia-500/10">
                 <p className="text-sm font-medium text-white">{item.title}</p>
                 <p className="mt-1 text-sm text-zinc-300">{item.description}</p>
-                <p className="mt-1 text-xs text-zinc-500">适用场景：{item.usage}</p>
+                <p className="mt-1 text-xs text-fuchsia-200/70">适用场景：{item.usage}</p>
               </div>
             ))
           ) : (
@@ -378,12 +401,12 @@ export function ContentResultView({ data }: { data: ContentGenerateResult }) {
       <div>
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">视频素材</p>
         {data.videoMaterial ? (
-          <div className="space-y-2 rounded-lg bg-white/[0.03] p-3">
-            <p className="text-sm text-zinc-200">钩子：{data.videoMaterial.hook}</p>
+          <div className="space-y-2 rounded-[18px] border border-cyan-400/14 bg-cyan-500/8 p-3 transition duration-200 hover:border-cyan-300/24 hover:bg-cyan-500/10">
+            <p className="text-sm text-zinc-100">钩子：{data.videoMaterial.hook}</p>
             <p className="whitespace-pre-wrap text-sm text-zinc-300">口播：{data.videoMaterial.voiceover}</p>
             <p className="text-sm text-zinc-300">字幕：{data.videoMaterial.caption}</p>
             <div>
-              <p className="mb-1 text-xs text-zinc-500">分镜</p>
+              <p className="mb-1 text-xs text-cyan-200/70">分镜</p>
               <ul className="space-y-1">
                 {data.videoMaterial.scenes.map((scene) => (
                   <li key={scene} className="text-sm text-zinc-300">· {scene}</li>
@@ -403,6 +426,11 @@ export function SeoResultView({ data }: { data: SeoOptimizeResult }) {
   return (
     <SectionCard
       title="SEO 优化结果"
+      tone={{
+        shell: 'bg-[linear-gradient(180deg,rgba(17,34,31,0.96),rgba(10,20,18,0.96))]',
+        header: 'text-emerald-200',
+        button: 'text-emerald-100 hover:text-white',
+      }}
       onCopy={() =>
         copyText(
           [
@@ -463,6 +491,11 @@ export function SocialResultView({ data }: { data: SocialGenerateResult }) {
   return (
     <SectionCard
       title="社媒适配结果"
+      tone={{
+        shell: 'bg-[linear-gradient(180deg,rgba(22,28,42,0.96),rgba(12,16,24,0.96))]',
+        header: 'text-cyan-200',
+        button: 'text-cyan-100 hover:text-white',
+      }}
       onCopy={() =>
         copyText(
           data.copies
@@ -478,7 +511,7 @@ export function SocialResultView({ data }: { data: SocialGenerateResult }) {
         {data.copies.map((copy) => (
           <div
             key={copy.platform}
-            className="rounded-xl border border-white/5 bg-white/[0.03] p-4"
+            className="rounded-[22px] border border-cyan-400/12 bg-cyan-500/8 p-4 shadow-[0_14px_36px_rgba(8,47,73,0.12)] transition duration-200 hover:-translate-y-0.5 hover:border-cyan-300/22 hover:bg-cyan-500/10"
           >
             <Chip size="sm" color="secondary" variant="flat" className="mb-3">
               {PLATFORM_LABELS[copy.platform] ?? copy.platform}
@@ -513,7 +546,7 @@ export function MergeResultView({ data }: { data: MergeResult }) {
   return (
     <div className="space-y-4">
       {data.pendingConfirmations.length > 0 && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+        <div className="rounded-[22px] border border-amber-500/22 bg-amber-500/10 p-4 shadow-[0_16px_42px_rgba(120,53,15,0.12)] transition duration-200 hover:-translate-y-0.5 hover:border-amber-400/32 hover:bg-amber-500/14">
           <p className="mb-2 text-sm font-medium text-amber-200">待确认项</p>
           <ul className="space-y-1">
             {data.pendingConfirmations.map((item) => (
@@ -525,7 +558,7 @@ export function MergeResultView({ data }: { data: MergeResult }) {
         </div>
       )}
       {data.consistencyNotes.length > 0 && (
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="rounded-[22px] border border-violet-400/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-4 transition duration-200 hover:-translate-y-0.5 hover:border-violet-300/22 hover:bg-white/[0.07]">
           <p className="mb-2 text-sm font-medium text-zinc-300">一致性说明</p>
           <ul className="space-y-1">
             {data.consistencyNotes.map((note) => (

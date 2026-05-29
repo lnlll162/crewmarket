@@ -48,7 +48,7 @@ export function PipelineProgress({ stepStatus, currentStep, compact }: PipelineP
   );
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-5">
+    <div className="rounded-[28px] border border-violet-400/16 bg-[linear-gradient(180deg,rgba(26,20,44,0.92),rgba(12,12,18,0.96))] p-5 shadow-[0_26px_78px_rgba(0,0,0,0.36)] backdrop-blur-2xl transition duration-300 hover:-translate-y-0.5 hover:border-violet-300/26 hover:shadow-[0_30px_86px_rgba(0,0,0,0.42)]">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <h3 className="font-semibold text-white">首页生成流程</h3>
@@ -57,16 +57,16 @@ export function PipelineProgress({ stepStatus, currentStep, compact }: PipelineP
           </p>
         </div>
         {isActive && (
-          <Chip size="sm" variant="flat" color="secondary">
+          <Chip size="sm" variant="flat" color="secondary" className="bg-white/10 text-violet-100">
             {progress}%
           </Chip>
         )}
       </div>
 
       {isActive && (
-        <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-zinc-800">
+        <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-black/30">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
+            className="h-full rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500"
             style={{ width: `${progress}%`, transition: 'width 0.4s ease-out' }}
           />
         </div>
@@ -84,7 +84,7 @@ export function PipelineProgress({ stepStatus, currentStep, compact }: PipelineP
           return (
             <li
               key={step.id}
-              className="rounded-2xl border border-white/5 bg-white/[0.03] p-4"
+              className="rounded-[22px] border border-white/6 bg-white/[0.04] p-4 transition duration-200 hover:-translate-y-0.5 hover:border-violet-300/22 hover:bg-white/[0.06] hover:shadow-[0_14px_34px_rgba(0,0,0,0.2)]"
             >
               <div className="flex gap-3">
                 <div
@@ -122,7 +122,7 @@ export function PipelineOverview() {
       {PIPELINE_STEPS.map((step, i) => (
         <div
           key={step.id}
-          className="rounded-xl border border-white/5 bg-white/[0.03] p-4"
+          className="rounded-[22px] border border-white/6 bg-white/[0.04] p-4 transition duration-200 hover:-translate-y-0.5 hover:border-violet-300/22 hover:bg-white/[0.06] hover:shadow-[0_14px_34px_rgba(0,0,0,0.18)]"
         >
           <div className="mb-1 flex items-center gap-2">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-500/20 text-xs font-bold text-violet-300">
