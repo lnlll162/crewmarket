@@ -10,8 +10,7 @@ export async function POST(request: Request) {
       return jsonResponse(fail(API_CODES.PARAM_ERROR, '参数错误'), 400);
     }
 
-    const data = (await runCrewPipeline(body, 'full')) as PipelineRunResponseData;
-
+    const data = await runCrewPipeline(body, 'full');
 
     if (data.status === 'failed') {
       return jsonResponse(
@@ -20,7 +19,7 @@ export async function POST(request: Request) {
       );
     }
 
-    return jsonResponse(success(data));
+    return jsonResponse(success(data, 'Pipeline 执行成功'));
   } catch (err) {
     const message = err instanceof Error ? err.message : 'AI 服务异常';
     return jsonResponse(fail(API_CODES.AI_SERVICE_ERROR, message), 500);

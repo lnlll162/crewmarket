@@ -3,7 +3,7 @@ import { fail, jsonResponse, success } from '@/app/lib/api-response';
 import { createVideoJob, listVideoJobs } from '@/app/lib/video-jobs';
 
 export async function GET() {
-  return jsonResponse(success({ jobs: listVideoJobs() }));
+  return jsonResponse(success({ jobs: listVideoJobs() }, '视频任务列表获取成功'));
 }
 
 export async function POST(request: Request) {
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     }
 
     const job = await createVideoJob(prompt, model);
-    return jsonResponse(success(job), 202);
+    return jsonResponse(success(job, '视频任务创建成功'), 202);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'AI 服务异常';
     return jsonResponse(fail(API_CODES.AI_SERVICE_ERROR, message), 500);

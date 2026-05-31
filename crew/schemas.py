@@ -353,4 +353,237 @@ def validate_merge_review(data: Any) -> dict[str, Any]:
     }
 
 
+def _ensure_confidence(value: Any, label: str = "confidence") -> float:
+    try:
+        score = float(value)
+    except (TypeError, ValueError) as exc:
+        raise SchemaValidationError(f"{label} 必须为 0-1 之间数字") from exc
+    return max(0.0, min(1.0, score))
+
+
+def _ensure_severity(value: Any, label: str) -> str:
+    text = _ensure_str(value, label).lower()
+    if text not in ("low", "medium", "high"):
+        raise SchemaValidationError(f"{label} 必须为 low、medium 或 high")
+    return text
+
+
+def _validate_title_detail_items(
+    value: Any,
+    label: str,
+    *,
+    min_len: int = 1,
+    max_len: int = 8,
+    with_severity: bool = False,
+) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        raise SchemaValidationError(f"{label} 必须为数组")
+    if len(value) < min_len:
+        raise SchemaValidationError(f"{label} 至少需要 {min_len} 条")
+    items: list[dict[str, str]] = []
+    for index, raw in enumerate(value[:max_len]):
+        if not isinstance(raw, dict):
+            raise SchemaValidationError(f"{label}[{index}] 必须为对象")
+        item = {
+            "title": _ensure_str(raw.get("title"), f"{label}[{index}].title"),
+            "detail": _ensure_str(raw.get("detail"), f"{label}[{index}].detail"),
+        }
+        if with_severity:
+            item["severity"] = _ensure_severity(raw.get("severity"), f"{label}[{index}].severity")
+        items.append(item)
+    return items
+
+
+def validate_pipeline_summary(data: Any) -> dict[str, Any]:
+    if not isinstance(data, dict):
+        raise SchemaValidationError("汇总报告必须为 JSON 对象")
+
+    executive_summary = _ensure_str(data.get("executiveSummary"), "executiveSummary")
+
+    module_summary_raw = data.get("moduleSummary") or []
+    if not isinstance(module_summary_raw, list):
+        raise SchemaValidationError("moduleSummary 必须为数组")
+    module_summary: list[dict[str, Any]] = []
+    for index, raw in enumerate(module_summary_raw[:12]):
+        if not isinstance(raw, dict):
+            raise SchemaValidationError(f"moduleSummary[{index}] 必须为对象")
+        module_summary.append(
+            {
+                "moduleId": _ensure_str(raw.get("moduleId"), f"moduleSummary[{index}].moduleId"),
+                "moduleName": _ensure_str(raw.get("moduleName"), f"moduleSummary[{index}].moduleName"),
+                "title": _ensure_str(raw.get("title"), f"moduleSummary[{index}].title"),
+                "summary": _ensure_str(raw.get("summary"), f"moduleSummary[{index}].summary"),
+                "status": raw.get("status") if raw.get("status") in ("pending", "running", "completed", "failed") else "completed",
+            }
+        )
+
+    role_eval_raw = data.get("roleEvaluation") or []
+    if not isinstance(role_eval_raw, list) or not role_eval_raw:
+        raise SchemaValidationError("roleEvaluation 至少需要 1 条")
+    role_evaluation: list[dict[str, Any]] = []
+    for index, raw in enumerate(role_eval_raw[:12]):
+        if not isinstance(raw, dict):
+            raise SchemaValidationError(f"roleEvaluation[{index}] 必须为对象")
+        item: dict[str, Any] = {
+            "roleId": _ensure_str(raw.get("roleId"), f"roleEvaluation[{index}].roleId"),
+            "roleName": _ensure_str(raw.get("roleName"), f"roleEvaluation[{index}].roleName"),
+            "evaluation": _ensure_str(raw.get("evaluation"), f"roleEvaluation[{index}].evaluation"),
+        }
+        if raw.get("score") is not None:
+            try:
+                item["score"] = max(1, min(10, int(raw.get("score"))))
+            except (TypeError, ValueError):
+                pass
+        role_evaluation.append(item)
+
+    perf_raw = data.get("performanceReview") or {}
+    if not isinstance(perf_raw, dict):
+        raise SchemaValidationError("performanceReview 必须为对象")
+    performance_review = {
+        "summary": _ensure_str(perf_raw.get("summary"), "performanceReview.summary"),
+    }
+
+    risk_assessment = _validate_title_detail_items(
+        data.get("riskAssessment"),
+        "riskAssessment",
+        min_len=1,
+        max_len=8,
+        with_severity=True,
+    )
+    opportunity_analysis = _validate_title_detail_items(
+        data.get("opportunityAnalysis"),
+        "opportunityAnalysis",
+        min_len=1,
+        max_len=6,
+    )
+    recommendations = _validate_title_detail_items(
+        data.get("recommendations"),
+        "recommendations",
+        min_len=1,
+        max_len=8,
+    )
+    pdf_highlights = _ensure_str_list(data.get("pdfHighlights"), "pdfHighlights", min_len=1, max_len=8)
+
+    missing_raw = data.get("missingInfo", [])
+    missing_info: list[str] = []
+    if missing_raw:
+        missing_info = _ensure_str_list(missing_raw, "missingInfo", min_len=1, max_len=20)
+
+    return {
+        "executiveSummary": executive_summary,
+        "moduleSummary": module_summary,
+        "roleEvaluation": role_evaluation,
+        "performanceReview": performance_review,
+        "riskAssessment": risk_assessment,
+        "opportunityAnalysis": opportunity_analysis,
+        "recommendations": recommendations,
+        "pdfHighlights": pdf_highlights,
+        "confidence": _ensure_confidence(data.get("confidence")),
+        "missingInfo": missing_info,
+    }
+
+
+PDF_SECTION_IDS = frozenset(
+    {
+        "taskOverview",
+        "inputSummary",
+        "moduleOutputs",
+        "rolePerformance",
+        "telemetryStats",
+        "assessment",
+        "risks",
+        "opportunities",
+        "recommendations",
+        "appendix",
+    }
+)
+
+
+def validate_pdf_report(data: Any) -> dict[str, Any]:
+    if not isinstance(data, dict):
+        raise SchemaValidationError("PDF 报告必须为 JSON 对象")
+
+    report_title = _ensure_str(data.get("reportTitle"), "reportTitle")
+    subtitle = data.get("subtitle")
+    subtitle_str = subtitle.strip() if isinstance(subtitle, str) and subtitle.strip() else None
+    generated_at = _ensure_str(data.get("generatedAt"), "generatedAt")
+    pipeline_id = data.get("pipelineId")
+    pipeline_id_str = pipeline_id.strip() if isinstance(pipeline_id, str) and pipeline_id.strip() else None
+    prompt_version = data.get("promptVersion")
+    prompt_version_str = (
+        prompt_version.strip() if isinstance(prompt_version, str) and prompt_version.strip() else "v1.0.0"
+    )
+    model_used = data.get("modelUsed")
+    model_used_str = model_used.strip() if isinstance(model_used, str) and model_used.strip() else None
+
+    cover_highlights = _ensure_str_list(data.get("coverHighlights"), "coverHighlights", min_len=1, max_len=8)
+
+    sections_raw = data.get("sections") or []
+    if not isinstance(sections_raw, list) or len(sections_raw) < 4:
+        raise SchemaValidationError("sections 至少需要 4 条")
+    sections: list[dict[str, Any]] = []
+    for index, raw in enumerate(sections_raw[:12]):
+        if not isinstance(raw, dict):
+            raise SchemaValidationError(f"sections[{index}] 必须为对象")
+        section_id = _ensure_str(raw.get("id"), f"sections[{index}].id")
+        if section_id not in PDF_SECTION_IDS:
+            raise SchemaValidationError(f"sections[{index}].id 不在允许列表内：{section_id}")
+        bullets_raw = raw.get("bullets") or []
+        bullets: list[str] = []
+        if bullets_raw:
+            bullets = _ensure_str_list(bullets_raw, f"sections[{index}].bullets", min_len=1, max_len=8)
+        sections.append(
+            {
+                "id": section_id,
+                "title": _ensure_str(raw.get("title"), f"sections[{index}].title"),
+                "content": _ensure_str(raw.get("content"), f"sections[{index}].content"),
+                "bullets": bullets,
+            }
+        )
+
+    telemetry_raw = data.get("telemetrySnapshot") or {}
+    if not isinstance(telemetry_raw, dict):
+        raise SchemaValidationError("telemetrySnapshot 必须为对象")
+    telemetry_snapshot: dict[str, Any] = {}
+    for key in ("totalDurationMs", "totalTokens"):
+        if telemetry_raw.get(key) is not None:
+            try:
+                telemetry_snapshot[key] = int(telemetry_raw[key])
+            except (TypeError, ValueError):
+                pass
+    if telemetry_raw.get("successRate") is not None:
+        try:
+            telemetry_snapshot["successRate"] = max(0.0, min(1.0, float(telemetry_raw["successRate"])))
+        except (TypeError, ValueError):
+            pass
+    summary_text = telemetry_raw.get("summaryText")
+    if isinstance(summary_text, str) and summary_text.strip():
+        telemetry_snapshot["summaryText"] = summary_text.strip()
+
+    disclaimer_raw = data.get("disclaimer")
+    disclaimer = (
+        disclaimer_raw.strip()
+        if isinstance(disclaimer_raw, str) and disclaimer_raw.strip()
+        else "本报告由 AI 自动生成，仅供内部评审参考，投放前请人工复核。"
+    )
+
+    result: dict[str, Any] = {
+        "reportTitle": report_title,
+        "generatedAt": generated_at,
+        "promptVersion": prompt_version_str,
+        "coverHighlights": cover_highlights,
+        "sections": sections,
+        "telemetrySnapshot": telemetry_snapshot,
+        "disclaimer": disclaimer,
+        "confidence": _ensure_confidence(data.get("confidence")),
+    }
+    if subtitle_str:
+        result["subtitle"] = subtitle_str
+    if pipeline_id_str:
+        result["pipelineId"] = pipeline_id_str
+    if model_used_str:
+        result["modelUsed"] = model_used_str
+    return result
+
+
 Validator = Callable[[Any], dict[str, Any]]

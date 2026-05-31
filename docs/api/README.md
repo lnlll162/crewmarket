@@ -67,11 +67,12 @@ CrewAI 工作流（AI 执行层，6 个核心模块）
 | 3 | `task.content_write` | 营销内容与物料生成师 | `content/generate` / `pipeline` | 产品信息 + 市场与品牌策略 | 标题、卖点、详情页、转化描述、海报文案、图片创意、视频脚本、视频素材 |
 | 4 | `task.seo_optimize` | 渠道适配与搜索优化师 | `seo/optimize` / `pipeline` | 营销内容 + 品类关键词 | 关键词列表、优化标题、搜索友好文案、多平台适配文案 |
 | 5 | `task.social_adapt` | 社媒文案生成师 | `social/generate` / `pipeline` | 产品信息 + 营销内容 | 小红书、微博、抖音适配文案 |
-| 6 | `task.result_merge` | 营销结果审核员 | `result/merge` / `pipeline` | 上述全部输出 | 一致性建议、待确认项、完整营销物料包 JSON |
+| 6 | `task.result_merge` | 汇总评估官 | `result/merge` / `pipeline` | 上述全部输出 | 评估报告 JSON（summary） |
+| 7 | `task.pdf_report` | PDF 专业报告撰写官 | `pipeline`（summary 之后） | summary + modules | 可打印 PDF 文档结构 |
 
 ### 多模型策略（按 Task 选型）
 
-与老师讲解一致：**6 个核心模块各自绑定不同大模型**，按 Agent 职责选型，而非全流程共用同一模型。
+与老师讲解一致：**7 个 AI Task 各自绑定不同大模型**（硅基流动白名单），全流程不共用同一模型。
 
 | # | AI Task | 推荐模型类型 | 示例模型（可替换） | 选型理由 |
 |---|---------|--------------|-------------------|----------|
@@ -132,28 +133,47 @@ POST /api/pipeline/run
 
 支持 **多 Provider、多模型**。每个 Task 读取独立环境变量；未配置时回退到 `LLM_DEFAULT_*`。
 
-#### 推荐：硅基流动（SiliconFlow）— 一个 Key，文本 + 识图
+#### 推荐：硅基流动（SiliconFlow）— 单 Key + 已实测白名单
 
-**已实测确认：一个 `SILICONFLOW_API_KEY` 即可覆盖本项目全部 6 个 Task**（含产品图片识别）。
+**策略（对齐重构 §3.5 / §4.1）**：
+- 唯一供应商：`siliconflow` + `SILICONFLOW_API_KEY`
+- 每个 **AiTask** 独立 `AGENT_MODEL_*_MODEL`（7 个 Task，含 PDF 报告）
+- 默认模型只来自 `crew/siliconflow/verified_models.py`（Gate 实测通过）
+- `.env` 若填写非白名单模型，`run_pipeline` **启动即报错**
+- `GET /api/siliconflow/models` 返回 `catalogMode: verified`，不是账号下 60+ 未测模型
 
 | 配置项 | 值 |
 |--------|-----|
 | Base URL | `https://api.siliconflow.cn/v1` |
-| API Key | [cloud.siliconflow.cn](https://cloud.siliconflow.cn/account/ak) 获取 |
-| 环境变量 | `SILICONFLOW_API_KEY`（**仅放 `.env`，禁止写入文档或提交 Git**） |
+| 白名单源码 | `crew/siliconflow/verified_models.py` |
+| 白名单校验 | `py crew/probe_siliconflow_verify.py` |
+| **全模型 live 测试** | **`py crew/probe_all_models.py`**（Pipeline 绑定 14 项） |
+| **账号全量模型测试** | **`py crew/probe_account_models.py`**（catalog 全部模型逐一点测） |
+| 模型目录 · 白名单 | `GET /api/siliconflow/models` |
+| 模型目录 · 账号全量 | `GET /api/siliconflow/models?mode=account` |
+| 账号全量目录（调试） | `py crew/probe_siliconflow_catalog.py --account` |
+| live 最小调用 | `py crew/probe_siliconflow_verify.py --live` |
 
-**本项目实测可用的模型配置（2026-05-25）：**
+**已实测绑定（生产默认，2026-05-30）**
 
-| Task | 模型 ID | 类型 | 实测 |
-|------|---------|------|------|
-| 产品提取（识图） | `Qwen/Qwen3-VL-32B-Instruct` | **Vision 多模态** | ✅ 可用 |
-| 市场调研 | `deepseek-ai/DeepSeek-V3` | 文本 | ✅ 可用 |
-| 文案生成 | `Qwen/Qwen2.5-72B-Instruct` | 文本 | ✅ 可用 |
-| SEO 优化 | `THUDM/GLM-4-32B-0414` | 文本 | ✅ 可用 |
-| 社媒适配 | `Qwen/Qwen2.5-32B-Instruct` | 文本 | ✅ 可用 |
-| 汇总协调 | `deepseek-ai/DeepSeek-V3` | 文本 | ✅ 可用 |
+| 用途 | AiTask / 能力 | 模型 ID | 验证依据 |
+|------|---------------|---------|----------|
+| 产品识图 | `task.product_extract` | `Qwen/Qwen3-VL-32B-Instruct` | Gate C live |
+| 市场分析 | `task.market_research` | `deepseek-ai/DeepSeek-V3` | Gate C live |
+| 文案物料 | `task.content_write` | `Qwen/Qwen2.5-72B-Instruct` | 2025-05-25 实测 |
+| SEO | `task.seo_optimize` | `THUDM/GLM-4-32B-0414` | 2025-05-25 实测 |
+| 社媒 | `task.social_adapt` | `Qwen/Qwen2.5-32B-Instruct` | 2025-05-25 实测 |
+| 汇总评估 | `task.result_merge` | `deepseek-ai/DeepSeek-V3` | Gate F live |
+| PDF 报告 | `task.pdf_report` | `deepseek-ai/DeepSeek-V3` | Gate G smoke |
+| 文生图 | Pipeline 物料 | `baidu/ERNIE-Image-Turbo` | 项目历史默认 |
+| 文生视频 | `/api/video/jobs` | `Wan-AI/Wan2.2-T2V-A14B` | 账号唯一 T2V |
+| Embedding | 辅助 API | `BAAI/bge-m3` | `POST /api/siliconflow/embeddings` |
+| Rerank | 辅助 API | `BAAI/bge-reranker-v2-m3` | `POST /api/siliconflow/rerank` |
+| TTS（可选） | 可选 REST | `fnlp/MOSS-TTSD-v0.5` | `POST /api/siliconflow/speech` |
+| STT（可选） | 可选 REST | `FunAudioLLM/SenseVoiceSmall` | `POST /api/siliconflow/stt` |
+| 模型目录 | 白名单 / 全量 | — | `GET /api/siliconflow/models[?mode=account]` |
 
-> 部分文档初稿中的 `deepseek-ai/deepseek-vl2`、`zai-org/GLM-4.5` 在当前账号下返回 `Model disabled`，已替换为上表可用模型。不同账号可用模型可能不同，以控制台为准。
+> **未接入主链路**：TTS/STT 未列入 `verified_models.py` 白名单（Pipeline bootstrap 不注入），但 **`POST /api/siliconflow/speech` 路由保留**供联调；通过 Gate 后再写入白名单。
 
 #### Task 1 产品识图（Vision）说明
 

@@ -46,3 +46,6 @@ venv/
 .vercel
 .turbo
 *.pem
+
+# Local runtime overrides
+data/agent-model-config.json

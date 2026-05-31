@@ -12,3 +12,9 @@ body {
   background: radial-gradient(ellipse at top, #1a1a2e 0%, #0a0a0f 50%);
   min-height: 100vh;
 }
+
+/* HeroUI 下拉层：避免在表格/卡片布局中被遮挡 */
+[data-slot='popover'],
+[data-slot='content'] {
+  z-index: 9999;
+}

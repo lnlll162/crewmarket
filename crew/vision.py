@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime, timezone
+from time import perf_counter
 from typing import Any, Optional
 
 import httpx
@@ -10,9 +12,18 @@ import httpx
 from config import SILICONFLOW_BASE_URL, SILICONFLOW_IMAGE_MODEL
 from prompts import GLOBAL_RULES
 from schemas import SchemaValidationError, parse_json, validate_product
+from telemetry_usage import normalize_usage
 
 MAX_VISION_RETRIES = 3
 MAX_DESCRIPTION_CHARS = 1800
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _now_ms(started_at: float) -> int:
+    return max(0, int((perf_counter() - started_at) * 1000))
 
 EXTRACT_PROMPT = f"""{GLOBAL_RULES}
 
@@ -46,7 +57,7 @@ def _call_vision_api(
     image_base64: Optional[str],
     *,
     retry_hint: str = "",
-) -> str:
+) -> tuple[str, dict[str, int] | None]:
     api_key = os.getenv("SILICONFLOW_API_KEY", "").strip()
     if not api_key:
         raise ValueError("未配置 SILICONFLOW_API_KEY")
@@ -96,24 +107,69 @@ def _call_vision_api(
         resp.raise_for_status()
         data = resp.json()
 
-    return data["choices"][0]["message"]["content"]
+    usage = normalize_usage(data)
+    return data["choices"][0]["message"]["content"], usage
 
 
 def extract_product(
     description: str,
     image_url: Optional[str] = None,
     image_base64: Optional[str] = None,
+    *,
+    telemetry: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     last_error = ""
     retry_hint = ""
+    task_started_iso = _now_iso()
+    task_started_at = perf_counter()
+    model = os.getenv("AGENT_MODEL_PRODUCT_EXTRACT_MODEL", SILICONFLOW_IMAGE_MODEL).strip()
 
     for attempt in range(MAX_VISION_RETRIES):
         try:
-            raw = _call_vision_api(description, image_url, image_base64, retry_hint=retry_hint)
+            raw, usage = _call_vision_api(description, image_url, image_base64, retry_hint=retry_hint)
             data = parse_json(raw)
-            return validate_product(data)
+            product = validate_product(data)
+            if telemetry is not None:
+                telemetry.append(
+                    {
+                        "model": model,
+                        "provider": "siliconflow",
+                        "roleId": "productExtract",
+                        "roleName": "产品提取角色",
+                        "moduleId": "productExtract",
+                        "startedAt": task_started_iso,
+                        "finishedAt": _now_iso(),
+                        "durationMs": _now_ms(task_started_at),
+                        "inputTokens": (usage or {}).get("inputTokens"),
+                        "outputTokens": (usage or {}).get("outputTokens"),
+                        "totalTokens": (usage or {}).get("totalTokens"),
+                        "status": "success",
+                        "errorMessage": None,
+                        "retryCount": attempt,
+                    }
+                )
+            return product
         except (SchemaValidationError, ValueError, TypeError, KeyError) as exc:
             last_error = str(exc)
             retry_hint = last_error
 
+    if telemetry is not None:
+        telemetry.append(
+            {
+                "model": model,
+                "provider": "siliconflow",
+                "roleId": "productExtract",
+                "roleName": "产品提取角色",
+                "moduleId": "productExtract",
+                "startedAt": task_started_iso,
+                "finishedAt": _now_iso(),
+                "durationMs": _now_ms(task_started_at),
+                "inputTokens": None,
+                "outputTokens": None,
+                "totalTokens": None,
+                "status": "failed",
+                "errorMessage": last_error,
+                "retryCount": MAX_VISION_RETRIES,
+            }
+        )
     raise ValueError(f"产品识图在 {MAX_VISION_RETRIES} 次尝试后仍未返回合格 JSON：{last_error}")

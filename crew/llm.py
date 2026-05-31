@@ -19,6 +19,7 @@ TASK_TEMPERATURE: dict[AiTaskId, float] = {
     "task.seo_optimize": 0.4,
     "task.social_adapt": 0.65,
     "task.result_merge": 0.35,
+    "task.pdf_report": 0.3,
 }
 
 

@@ -35,6 +35,7 @@ def test_validate_content() -> None:
             "sellingPointCopy": ["织物表带 - 透气", "硅胶表带 - 防汗", "矩形屏 - 易读"],
             "detailPageContent": "x" * 120,
             "conversionDescription": "立即选购，体验双款表带随心切换的佩戴自由！",
+            "videoScript": "开场展示表带切换，突出轻薄与双材质卖点，结尾引导下单。",
         }
     )
     assert len(content["sellingPointCopy"]) == 3
@@ -70,8 +71,13 @@ if __name__ == "__main__":
     validate_seo(
         {
             "keywords": ["a", "b", "c", "d", "e"],
-            "optimizedTitle": "优化标题示例文字",
-            "searchFriendlyCopy": "搜索友好文案",
+            "optimizedTitle": "优化标题示例文字足够长",
+            "searchFriendlyCopy": "搜索友好文案" * 8,
+            "channelAdaptation": {
+                "xiaohongshu": "小红书渠道适配文案示例",
+                "weibo": "微博渠道适配文案示例",
+                "douyin": "抖音渠道适配文案示例",
+            },
         }
     )
     validate_merge_review(

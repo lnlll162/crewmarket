@@ -3,7 +3,122 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, TypedDict
+
+# 与 app/lib/prompts.ts ROLE_PROMPTS.*.version 保持一致
+PROMPT_VERSIONS: dict[str, str] = {
+    "productExtract": "v1.0.0",
+    "marketResearch": "v1.0.0",
+    "content": "v1.0.0",
+    "seo": "v1.0.0",
+    "social": "v1.0.0",
+    "merged": "v1.0.0",
+    "pdfReport": "v1.0.0",
+}
+
+OUTPUT_RULE = (
+    "你必须只输出一个合法 JSON 对象，字段名与任务 schema 完全一致，"
+    "禁止 markdown、解释文字或额外字段。"
+)
+
+
+class RoleDefinition(TypedDict):
+    roleId: str
+    roleName: str
+    version: str
+    telemetryTag: str
+    role: str
+    goal: str
+    systemPrompt: str
+
+
+# 单一真相源：CrewAI Agent + 前端 ROLE_PROMPTS + telemetry roleId 对齐
+ROLE_DEFINITIONS: dict[str, RoleDefinition] = {
+    "productExtract": {
+        "roleId": "productExtract",
+        "roleName": "产品提取角色",
+        "version": "v1.0.0",
+        "telemetryTag": "product_extract",
+        "role": "产品信息提取专家",
+        "goal": "从文本与图片中提取品类、属性、卖点与待确认字段",
+        "systemPrompt": (
+            "你是产品信息提取专家，负责从文本和图片中提取商品的基础信息、"
+            "结构化卖点和可用于后续分析的关键属性。"
+        ),
+    },
+    "marketResearch": {
+        "roleId": "marketResearch",
+        "roleName": "市场分析角色",
+        "version": "v1.0.0",
+        "telemetryTag": "market_research",
+        "role": "市场与品牌策略师",
+        "goal": "分析产品类目趋势、竞品风格、目标用户画像，并给出品牌调性与视觉风格建议",
+        "systemPrompt": "你擅长电商市场研究、品牌定位和风格提炼，输出简洁、可落地。",
+    },
+    "content": {
+        "roleId": "content",
+        "roleName": "文案生成角色",
+        "version": "v1.0.0",
+        "telemetryTag": "content_write",
+        "role": "营销内容生成师",
+        "goal": "撰写高转化标题、卖点、详情页、海报文案、图片创意、视频脚本与视频素材",
+        "systemPrompt": (
+            "你是资深电商营销文案，风格真实可信，不夸大宣传，"
+            "禁止空泛套话，且要兼顾不同营销物料的统一口径。"
+        ),
+    },
+    "seo": {
+        "roleId": "seo",
+        "roleName": "SEO 优化角色",
+        "version": "v1.0.0",
+        "telemetryTag": "seo_optimize",
+        "role": "渠道适配与搜索优化师",
+        "goal": "输出关键词、搜索友好标题、搜索文案，并生成多平台适配文案",
+        "systemPrompt": "你熟悉电商平台搜索与内容分发规则，擅长关键词布局与平台适配。",
+    },
+    "social": {
+        "roleId": "social",
+        "roleName": "社媒改写角色",
+        "version": "v1.0.0",
+        "telemetryTag": "social_adapt",
+        "role": "营销物料适配师",
+        "goal": "为各平台提供差异化短文案、话题标签与短视频脚本建议",
+        "systemPrompt": "你熟悉国内社媒平台语境与短视频传播逻辑，三平台内容不可雷同。",
+    },
+    "merged": {
+        "roleId": "merged",
+        "roleName": "汇总评估角色",
+        "version": "v1.0.0",
+        "telemetryTag": "result_merge",
+        "role": "汇总评估官",
+        "goal": "基于 PipelineSummaryInput 输出结构化评估结论（executiveSummary、风险、机会、建议）",
+        "systemPrompt": (
+            "你是 CrewMarket 汇总评估模型，只综合已有模块结果与 telemetry，"
+            "不重新生成业务物料。"
+        ),
+    },
+    "pdfReport": {
+        "roleId": "pdfReport",
+        "roleName": "PDF 报告撰写角色",
+        "version": "v1.0.0",
+        "telemetryTag": "pdf_report",
+        "role": "PDF 专业报告撰写官",
+        "goal": "将评估结论与过程记录改写为适合管理层阅读、可直接导出 PDF 的分章节报告",
+        "systemPrompt": (
+            "你擅长撰写结构清晰、语气专业、可打印的评估报告。"
+            "只基于输入的 summary 与 modules 扩写，不编造事实。"
+        ),
+    },
+}
+
+
+def agent_backstory(role_id: str) -> str:
+    meta = ROLE_DEFINITIONS[role_id]
+    return f"{meta['systemPrompt']}{OUTPUT_RULE}"
+
+
+def role_meta(role_id: str) -> RoleDefinition:
+    return ROLE_DEFINITIONS[role_id]
 
 GLOBAL_RULES = """
 【全局规则】
@@ -99,6 +214,44 @@ MERGE_REVIEW_SCHEMA = """
 {
   "consistencyNotes": ["一致性说明1", "说明2"],
   "pendingConfirmations": ["需用户确认项，无则空数组"]
+}
+""".strip()
+
+PIPELINE_SUMMARY_SCHEMA = """
+{
+  "executiveSummary": "150-400字高层总结：整体质量、亮点、主要风险与待办",
+  "moduleSummary": [
+    {
+      "moduleId": "productExtract",
+      "moduleName": "产品提取",
+      "title": "模块标题",
+      "summary": "该模块核心结论（60-150字）",
+      "status": "completed"
+    }
+  ],
+  "roleEvaluation": [
+    {
+      "roleId": "marketResearch",
+      "roleName": "市场分析角色",
+      "evaluation": "该角色输出质量与稳定性评价（40-120字）",
+      "score": 8
+    }
+  ],
+  "performanceReview": {
+    "summary": "结合 pipelineTelemetry 对耗时、Token、成功率的文字评价（80-200字）"
+  },
+  "riskAssessment": [
+    {"title": "风险标题", "detail": "风险说明", "severity": "low|medium|high"}
+  ],
+  "opportunityAnalysis": [
+    {"title": "机会标题", "detail": "机会说明"}
+  ],
+  "recommendations": [
+    {"title": "建议标题", "detail": "可执行建议"}
+  ],
+  "pdfHighlights": ["报告亮点1", "亮点2", "亮点3"],
+  "confidence": 0.85,
+  "missingInfo": ["待确认项，无则空数组"]
 }
 """.strip()
 
@@ -236,3 +389,128 @@ market={_dump(market)}
 content={_dump(content)}
 seo={_dump(seo)}
 social={_dump(social)}"""
+
+
+def pipeline_summary_prompt(summary_input: dict[str, Any]) -> str:
+    constraints = summary_input.get("constraints") or {}
+    return f"""{GLOBAL_RULES}
+
+【任务】你是 CrewMarket 最终汇总评估官。基于 PipelineSummaryInput 结构化输入，输出专业评估报告 JSON。
+
+【输出 schema — 必须完整输出以下字段】
+{PIPELINE_SUMMARY_SCHEMA}
+
+【约束】
+- allowInference={constraints.get("allowInference", False)}：禁止编造输入中未出现的具体参数、价格、认证信息
+- reportTone={constraints.get("reportTone", "professional")}：专业、客观、可落地
+- includeRiskForecast={constraints.get("includeRiskForecast", True)}
+- includeOpportunityAnalysis={constraints.get("includeOpportunityAnalysis", True)}
+
+【要求】
+1. executiveSummary 150-400 字，概括本次运行整体表现、质量与下一步。
+2. moduleSummary 必须覆盖 moduleResults 中每个 moduleId，逐条给出 title + summary。
+3. roleEvaluation 必须覆盖 roleRuns 中每个 roleId，score 为 1-10 整数。
+4. performanceReview.summary 必须结合 pipelineTelemetry 中的耗时、Token、成功率做量化评价。
+5. riskAssessment 2-5 条；severity 只能是 low、medium、high。
+6. opportunityAnalysis 2-4 条；recommendations 3-6 条，必须可执行。
+7. pdfHighlights 3-6 条，适合写入 PDF 目录或摘要页。
+8. missingInfo 合并 userInput 与模块中的待确认项；无则 []。
+9. 禁止输出 schema 外字段；禁止 markdown。
+
+【PipelineSummaryInput】
+{_dump(summary_input)}"""
+
+
+PDF_REPORT_SCHEMA = """
+{
+  "reportTitle": "CrewMarket 营销 Pipeline 评估报告",
+  "subtitle": "基于多智能体协同输出的运行评估",
+  "generatedAt": "ISO-8601 时间",
+  "pipelineId": "pl_xxx",
+  "promptVersion": "v1.0.0",
+  "confidence": 0.85,
+  "coverHighlights": ["封面亮点1", "亮点2", "亮点3"],
+  "sections": [
+    {
+      "id": "taskOverview",
+      "title": "任务概述",
+      "content": "200-400 字，说明任务目标、输入与整体结论",
+      "bullets": ["要点1", "要点2"]
+    },
+    {
+      "id": "moduleOutputs",
+      "title": "模块输出摘要",
+      "content": "各模块产出质量与完整性概述",
+      "bullets": ["模块要点"]
+    },
+    {
+      "id": "rolePerformance",
+      "title": "角色表现评估",
+      "content": "各 AI 角色稳定性与输出质量",
+      "bullets": []
+    },
+    {
+      "id": "telemetryStats",
+      "title": "运行统计",
+      "content": "耗时、Token、成功率等量化说明",
+      "bullets": []
+    },
+    {
+      "id": "assessment",
+      "title": "综合评估",
+      "content": "executiveSummary 扩写为报告正文",
+      "bullets": []
+    },
+    {
+      "id": "risks",
+      "title": "风险预测",
+      "content": "主要风险与影响",
+      "bullets": ["风险项"]
+    },
+    {
+      "id": "opportunities",
+      "title": "机会分析",
+      "content": "可把握的机会点",
+      "bullets": []
+    },
+    {
+      "id": "recommendations",
+      "title": "优化建议",
+      "content": "可执行的后续行动",
+      "bullets": ["建议1", "建议2"]
+    }
+  ],
+  "telemetrySnapshot": {
+    "totalDurationMs": 0,
+    "totalTokens": 0,
+    "successRate": 0.95,
+    "summaryText": "80-150 字运行统计摘要"
+  },
+  "disclaimer": "本报告由 AI 自动生成，仅供内部评审参考，投放前请人工复核"
+}
+""".strip()
+
+
+def pdf_report_prompt(report_input: dict[str, Any]) -> str:
+    return f"""{GLOBAL_RULES}
+
+【任务】你是 CrewMarket PDF 专业报告撰写官（独立于汇总评估模型）。基于已生成的 PipelineSummaryOutput 与过程记录，输出可直接打印、适合管理层阅读的 PDF 报告 JSON。
+
+【与汇总评估的区别】
+- 汇总评估（summary）已完成结构化评估；你的职责是将其改写为分章节、可打印的长文报告
+- 不得编造输入与 summary 中未出现的事实、参数或数据
+- 语气专业、客观，适合 PDF 留档
+
+【输出 schema — 必须完整输出】
+{PDF_REPORT_SCHEMA}
+
+【要求】
+1. reportTitle 含产品名或任务标识（若有）；coverHighlights 3-6 条，适合封面摘要。
+2. sections 至少 6 条，必须覆盖：taskOverview、moduleOutputs、rolePerformance、telemetryStats、assessment、recommendations；risks/opportunities 有数据则必须单独成节。
+3. 每节 content 80-350 字；bullets 0-6 条，无则 []。
+4. telemetrySnapshot 必须引用 reportInput 中的 pipelineTelemetry 真实数字。
+5. confidence 与 summary.confidence 保持一致或略作说明。
+6. 禁止 markdown；禁止 schema 外字段。
+
+【reportInput】
+{_dump(report_input)}"""

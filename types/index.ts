@@ -204,6 +204,144 @@ export type PipelineStepId =
 
 export type PipelineStatus = 'pending' | 'running' | 'completed' | 'failed';
 
+export interface RoleDefinition {
+  roleId: string;
+  roleName: string;
+  version: string;
+  telemetryTag?: string;
+  systemPrompt: string;
+  taskPromptTemplate: string;
+  inputContract: string[];
+  outputContract: string[];
+  allowedTools?: string[];
+  modelPreference?: string;
+}
+
+export type ModelCallStatus = 'success' | 'failed' | 'timeout' | 'retrying';
+export type ModuleRunStatus = 'pending' | 'running' | 'completed' | 'failed';
+export type ReportTone = 'professional' | 'business' | 'analysis';
+export type RiskSeverity = 'low' | 'medium' | 'high';
+
+export interface TelemetryRecord {
+  model: string;
+  provider?: string;
+  roleId: string;
+  roleName: string;
+  moduleId: PipelineStepId | 'summary' | 'video' | 'custom';
+  startedAt: string;
+  finishedAt?: string;
+  durationMs?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  status: ModelCallStatus;
+  errorMessage?: string | null;
+  retryCount?: number | null;
+}
+
+export interface ModuleResultEnvelope<T = unknown> {
+  moduleId: PipelineStepId | 'summary' | 'video' | 'custom';
+  moduleName: string;
+  roleId: string;
+  roleName: string;
+  model?: string;
+  startedAt?: string;
+  finishedAt?: string;
+  durationMs?: number;
+  status: ModuleRunStatus;
+  inputSummary?: string;
+  outputSummary?: string;
+  promptVersion?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  errorMessage?: string | null;
+  raw?: T;
+}
+
+export interface PipelineSummaryInput {
+  taskInfo: {
+    requestId: string;
+    taskName: string;
+    objective: string;
+    startedAt: string;
+    finishedAt?: string;
+  };
+  userInput: {
+    description?: string;
+    productName?: string;
+    category?: string;
+    assets: Array<{ id: string; type: 'text' | 'image'; content?: string; url?: string; base64?: string }>;
+    mergedText?: string;
+  };
+  moduleResults: ModuleResultEnvelope[];
+  roleRuns: TelemetryRecord[];
+  pipelineTelemetry: {
+    totalDurationMs?: number;
+    totalInputTokens?: number;
+    totalOutputTokens?: number;
+    totalTokens?: number;
+    successCount?: number;
+    failureCount?: number;
+    retryCount?: number;
+  };
+  constraints: {
+    allowInference: boolean;
+    reportTone: ReportTone;
+    includeRiskForecast: boolean;
+    includeOpportunityAnalysis: boolean;
+  };
+}
+
+export interface PipelineSummaryOutput {
+  executiveSummary: string;
+  moduleSummary: Array<Record<string, unknown>>;
+  roleEvaluation: Array<{ roleId: string; roleName: string; evaluation: string; score?: number }>;
+  performanceReview: {
+    summary: string;
+    totalDurationMs?: number;
+    totalInputTokens?: number;
+    totalOutputTokens?: number;
+    totalTokens?: number;
+    avgDurationMs?: number;
+    successRate?: number;
+    inputTokens?: number;
+    outputTokens?: number;
+  };
+  riskAssessment: Array<{ title: string; detail: string; severity: RiskSeverity }>;
+  opportunityAnalysis: Array<{ title: string; detail: string }>;
+  recommendations: Array<{ title: string; detail: string }>;
+  pdfHighlights: string[];
+  confidence: number;
+  missingInfo: string[];
+}
+
+export interface PdfReportSection {
+  id: string;
+  title: string;
+  content: string;
+  bullets?: string[];
+}
+
+export interface PdfReportDocument {
+  reportTitle: string;
+  subtitle?: string;
+  generatedAt: string;
+  pipelineId?: string;
+  promptVersion?: string;
+  modelUsed?: string;
+  confidence?: number;
+  coverHighlights: string[];
+  sections: PdfReportSection[];
+  telemetrySnapshot?: {
+    totalDurationMs?: number;
+    totalTokens?: number;
+    successRate?: number;
+    summaryText?: string;
+  };
+  disclaimer?: string;
+}
+
 export interface PipelineRunResponseData {
   pipelineId: string;
   status: PipelineStatus;
@@ -219,6 +357,10 @@ export interface PipelineRunResponseData {
   result?: MergeResult;
   pendingConfirmations: string[];
   generatedAt: string;
+  telemetry?: TelemetryRecord[];
+  modules?: ModuleResultEnvelope[];
+  summary?: PipelineSummaryOutput;
+  pdfReport?: PdfReportDocument;
   error?: {
     step: PipelineStepId;
     message: string;
@@ -233,7 +375,8 @@ export type AiTaskId =
   | 'task.content_write'
   | 'task.seo_optimize'
   | 'task.social_adapt'
-  | 'task.result_merge';
+  | 'task.result_merge'
+  | 'task.pdf_report';
 
 export const AI_TASK_ORDER: AiTaskId[] = [
   'task.product_extract',
@@ -242,6 +385,7 @@ export const AI_TASK_ORDER: AiTaskId[] = [
   'task.seo_optimize',
   'task.social_adapt',
   'task.result_merge',
+  'task.pdf_report',
 ];
 
 export const REST_TO_AI_TASKS: Record<string, AiTaskId[]> = {
@@ -285,9 +429,10 @@ export const AI_TASK_ENV_PREFIX: Record<AiTaskId, string> = {
   'task.seo_optimize': 'AGENT_MODEL_SEO_OPTIMIZE',
   'task.social_adapt': 'AGENT_MODEL_SOCIAL_ADAPT',
   'task.result_merge': 'AGENT_MODEL_RESULT_MERGE',
+  'task.pdf_report': 'AGENT_MODEL_PDF_REPORT',
 };
 
-/** 硅基流动：一个 Key，6 个 Task（含 Vision 识图，已实测 2026-05-25） */
+/** 硅基流动：一个 Key，7 个 Task（含 Vision 识图，已实测 2026-05-25） */
 export const SILICONFLOW_AGENT_MODELS: AgentModelConfig[] = [
   {
     taskId: 'task.product_extract',
@@ -326,6 +471,13 @@ export const SILICONFLOW_AGENT_MODELS: AgentModelConfig[] = [
   },
   {
     taskId: 'task.result_merge',
+    provider: 'siliconflow',
+    model: 'deepseek-ai/DeepSeek-V3',
+    apiKeyEnv: 'SILICONFLOW_API_KEY',
+    baseUrl: SILICONFLOW_BASE_URL,
+  },
+  {
+    taskId: 'task.pdf_report',
     provider: 'siliconflow',
     model: 'deepseek-ai/DeepSeek-V3',
     apiKeyEnv: 'SILICONFLOW_API_KEY',
@@ -371,6 +523,12 @@ export const DEFAULT_AGENT_MODELS: AgentModelConfig[] = [
     model: 'gpt-4o',
     apiKeyEnv: 'OPENAI_API_KEY',
   },
+  {
+    taskId: 'task.pdf_report',
+    provider: 'openai',
+    model: 'gpt-4o',
+    apiKeyEnv: 'OPENAI_API_KEY',
+  },
 ];
 
 export interface LlmDefaultConfig {
@@ -384,3 +542,5 @@ export const LLM_DEFAULT_CONFIG: LlmDefaultConfig = {
   model: 'gpt-4o-mini',
   apiKeyEnv: 'OPENAI_API_KEY',
 };
+
+export * from './siliconflow';

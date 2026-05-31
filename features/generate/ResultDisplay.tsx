@@ -7,9 +7,14 @@ import type {
   FieldWithStatus,
   MarketResearchResult,
   MergeResult,
+  ModuleResultEnvelope,
+  PipelineStepId,
+  PipelineSummaryOutput,
+  PdfReportDocument,
   ProductExtractResult,
   SeoOptimizeResult,
   SocialGenerateResult,
+  TelemetryRecord,
 } from '@/types';
 import { PLATFORM_LABELS } from './constants';
 
@@ -574,6 +579,415 @@ export function MergeResultView({ data }: { data: MergeResult }) {
       <ContentResultView data={pkg.content} />
       <SeoResultView data={pkg.seo} />
       <SocialResultView data={pkg.social} />
+    </div>
+  );
+}
+
+const MODULE_LABELS: Record<string, string> = {
+  productExtract: '产品提取',
+  marketResearch: '市场分析',
+  content: '文案生成',
+  seo: 'SEO 优化',
+  social: '社媒改写',
+  merged: '汇总评估',
+};
+
+function formatMs(ms?: number) {
+  if (ms == null) return '—';
+  if (ms < 1000) return `${ms} ms`;
+  return `${(ms / 1000).toFixed(1)} s`;
+}
+
+function formatTokens(value?: number) {
+  return value == null ? '—' : value.toLocaleString();
+}
+
+function formatRate(value?: number) {
+  return value == null ? '—' : `${Math.round(value * 100)}%`;
+}
+
+export function TelemetrySummaryView({
+  telemetry,
+  summary,
+}: {
+  telemetry?: TelemetryRecord[];
+  summary?: PipelineSummaryOutput;
+}) {
+  const perf = summary?.performanceReview;
+  const records = telemetry ?? [];
+
+  if (!records.length && !perf?.totalTokens) {
+    return (
+      <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-6 text-sm text-zinc-400">
+        暂无运行统计。完成一次 Pipeline 后将展示各角色耗时与 Token 消耗。
+      </div>
+    );
+  }
+
+  const totals = {
+    durationMs: records.reduce((sum, item) => sum + (item.durationMs ?? 0), 0),
+    inputTokens: perf?.totalInputTokens ?? perf?.inputTokens ?? records.reduce((sum, item) => sum + (item.inputTokens ?? 0), 0),
+    outputTokens: perf?.totalOutputTokens ?? perf?.outputTokens ?? records.reduce((sum, item) => sum + (item.outputTokens ?? 0), 0),
+    totalTokens: perf?.totalTokens ?? records.reduce((sum, item) => sum + (item.totalTokens ?? 0), 0),
+    successRate: perf?.successRate,
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: '总耗时', value: formatMs(totals.durationMs) },
+          { label: '输入 Token', value: formatTokens(totals.inputTokens) },
+          { label: '输出 Token', value: formatTokens(totals.outputTokens) },
+          { label: '总 Token', value: formatTokens(totals.totalTokens) },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="rounded-[20px] border border-cyan-400/12 bg-cyan-500/6 p-4 transition duration-200 hover:border-cyan-300/24 hover:bg-cyan-500/10"
+          >
+            <p className="text-xs uppercase tracking-wide text-cyan-200/70">{item.label}</p>
+            <p className="mt-2 text-2xl font-semibold text-white">{item.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2 text-sm text-zinc-400">
+        <span>调用次数 {records.length}</span>
+        <span>·</span>
+        <span>成功率 {formatRate(totals.successRate)}</span>
+      </div>
+
+      <div className="overflow-hidden rounded-[22px] border border-white/8 bg-black/20">
+        <div className="grid grid-cols-[1.2fr_1fr_0.8fr_0.8fr_0.8fr_0.7fr] gap-2 border-b border-white/8 px-4 py-3 text-[11px] uppercase tracking-wide text-zinc-500">
+          <span>角色 / 模块</span>
+          <span>模型</span>
+          <span>耗时</span>
+          <span>输入</span>
+          <span>输出</span>
+          <span>状态</span>
+        </div>
+        <div className="divide-y divide-white/6">
+          {records.map((item, index) => (
+            <div
+              key={`${item.moduleId}-${item.startedAt}-${index}`}
+              className="grid grid-cols-[1.2fr_1fr_0.8fr_0.8fr_0.8fr_0.7fr] gap-2 px-4 py-3 text-sm text-zinc-200"
+            >
+              <div className="min-w-0">
+                <p className="truncate font-medium text-white">{item.roleName}</p>
+                <p className="truncate text-xs text-zinc-500">
+                  {MODULE_LABELS[item.moduleId] ?? item.moduleId}
+                </p>
+              </div>
+              <p className="truncate text-xs text-zinc-400">{item.model}</p>
+              <p>{formatMs(item.durationMs)}</p>
+              <p>{formatTokens(item.inputTokens)}</p>
+              <p>{formatTokens(item.outputTokens)}</p>
+              <Chip
+                size="sm"
+                variant="flat"
+                color={item.status === 'success' ? 'success' : item.status === 'timeout' ? 'warning' : 'danger'}
+                className="w-fit"
+              >
+                {item.status}
+              </Chip>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {perf?.summary ? (
+        <div className="rounded-[20px] border border-violet-400/12 bg-violet-500/6 p-4">
+          <p className="text-xs uppercase tracking-wide text-violet-200/70">性能评估摘要</p>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-200">{perf.summary}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+const SEVERITY_LABELS: Record<string, string> = {
+  low: '低',
+  medium: '中',
+  high: '高',
+};
+
+export function SummaryReportView({ summary }: { summary?: PipelineSummaryOutput }) {
+  if (!summary?.executiveSummary) {
+    return (
+      <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-6 text-sm text-zinc-400">
+        暂无评估报告。完整 Pipeline 运行后将在此展示 executiveSummary、风险、机会与建议。
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-[22px] border border-violet-400/14 bg-violet-500/8 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-violet-200/80">Executive Summary</p>
+          <Chip size="sm" variant="flat" color="secondary">
+            置信度 {Math.round((summary.confidence ?? 0) * 100)}%
+          </Chip>
+        </div>
+        <p className="mt-3 text-sm leading-relaxed text-zinc-100">{summary.executiveSummary}</p>
+      </div>
+
+      {summary.riskAssessment?.length ? (
+        <SectionCard
+          title="风险预测"
+          tone={{
+            shell: 'border border-rose-400/12 bg-rose-500/6',
+            header: 'text-rose-100',
+            button: 'text-rose-200',
+          }}
+        >
+          <div className="space-y-3">
+            {summary.riskAssessment.map((item) => (
+              <div key={item.title} className="rounded-lg border border-rose-400/10 bg-black/20 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-medium text-white">{item.title}</p>
+                  <Chip size="sm" variant="flat" color="danger">
+                    {SEVERITY_LABELS[item.severity] ?? item.severity}
+                  </Chip>
+                </div>
+                <p className="mt-1 text-sm text-zinc-300">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      ) : null}
+
+      {summary.opportunityAnalysis?.length ? (
+        <SectionCard
+          title="机会分析"
+          tone={{
+            shell: 'border border-emerald-400/12 bg-emerald-500/6',
+            header: 'text-emerald-100',
+            button: 'text-emerald-200',
+          }}
+        >
+          <div className="space-y-3">
+            {summary.opportunityAnalysis.map((item) => (
+              <div key={item.title} className="rounded-lg border border-emerald-400/10 bg-black/20 p-3">
+                <p className="font-medium text-white">{item.title}</p>
+                <p className="mt-1 text-sm text-zinc-300">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      ) : null}
+
+      {summary.recommendations?.length ? (
+        <SectionCard
+          title="行动建议"
+          tone={{
+            shell: 'border border-cyan-400/12 bg-cyan-500/6',
+            header: 'text-cyan-100',
+            button: 'text-cyan-200',
+          }}
+        >
+          <div className="space-y-3">
+            {summary.recommendations.map((item) => (
+              <div key={item.title} className="rounded-lg border border-cyan-400/10 bg-black/20 p-3">
+                <p className="font-medium text-white">{item.title}</p>
+                <p className="mt-1 text-sm text-zinc-300">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      ) : null}
+
+      {summary.pdfHighlights?.length ? (
+        <div className="rounded-[20px] border border-white/8 bg-white/[0.03] p-4">
+          <p className="text-xs uppercase tracking-wide text-zinc-500">PDF 亮点</p>
+          <ul className="mt-2 space-y-1">
+            {summary.pdfHighlights.map((item) => (
+              <li key={item} className="text-sm text-zinc-300">
+                · {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {summary.missingInfo?.length ? (
+        <div className="rounded-[20px] border border-amber-500/20 bg-amber-500/8 p-4">
+          <p className="text-sm font-medium text-amber-200">待确认信息</p>
+          <ul className="mt-2 space-y-1">
+            {summary.missingInfo.map((item) => (
+              <li key={item} className="text-sm text-amber-100/80">
+                · {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function formatPercent(rate?: number) {
+  if (rate == null || Number.isNaN(rate)) return '—';
+  return `${Math.round(rate * 100)}%`;
+}
+
+export function PdfReportView({
+  report,
+  id = 'pdf-report-print-area',
+}: {
+  report: PdfReportDocument;
+  id?: string;
+}) {
+  const snap = report.telemetrySnapshot;
+
+  return (
+    <article
+      id={id}
+      className="pdf-report-root mx-auto max-w-[210mm] rounded-lg border border-zinc-200 bg-white px-10 py-12 text-zinc-900 shadow-sm"
+    >
+      <header className="border-b border-zinc-200 pb-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-violet-700">CrewMarket</p>
+        <h1 className="mt-3 text-2xl font-bold leading-tight text-zinc-900">{report.reportTitle}</h1>
+        {report.subtitle ? <p className="mt-2 text-base text-zinc-600">{report.subtitle}</p> : null}
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-xs text-zinc-500">
+          {report.pipelineId ? <span>Pipeline · {report.pipelineId}</span> : null}
+          <span>生成时间 · {new Date(report.generatedAt).toLocaleString('zh-CN')}</span>
+          {report.confidence != null ? <span>置信度 · {Math.round(report.confidence * 100)}%</span> : null}
+          {report.promptVersion ? <span>版本 · {report.promptVersion}</span> : null}
+        </div>
+        {report.coverHighlights?.length ? (
+          <ul className="mt-6 space-y-2 rounded-lg bg-violet-50 px-5 py-4">
+            {report.coverHighlights.map((item) => (
+              <li key={item} className="text-sm leading-relaxed text-violet-950">
+                · {item}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </header>
+
+      <div className="mt-8 space-y-8">
+        {report.sections.map((section) => (
+          <section key={`${section.id}-${section.title}`} className="break-inside-avoid">
+            <h2 className="text-lg font-semibold text-zinc-900">{section.title}</h2>
+            <p className="mt-3 text-sm leading-7 text-zinc-700">{section.content}</p>
+            {section.bullets?.length ? (
+              <ul className="mt-3 space-y-2">
+                {section.bullets.map((item) => (
+                  <li key={item} className="text-sm leading-relaxed text-zinc-600">
+                    · {item}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        ))}
+      </div>
+
+      {snap ? (
+        <div className="mt-10 rounded-lg border border-zinc-200 bg-zinc-50 p-5 break-inside-avoid">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">运行统计快照</p>
+          <div className="mt-3 grid gap-2 text-sm text-zinc-700 sm:grid-cols-3">
+            <p>总耗时：{formatMs(snap.totalDurationMs)}</p>
+            <p>总 Token：{formatTokens(snap.totalTokens)}</p>
+            <p>成功率：{formatPercent(snap.successRate)}</p>
+          </div>
+          {snap.summaryText ? <p className="mt-3 text-sm leading-relaxed text-zinc-600">{snap.summaryText}</p> : null}
+        </div>
+      ) : null}
+
+      {report.disclaimer ? (
+        <footer className="mt-10 border-t border-zinc-200 pt-6 text-xs leading-relaxed text-zinc-500">
+          {report.disclaimer}
+        </footer>
+      ) : null}
+    </article>
+  );
+}
+
+const MODULE_STEP_ORDER: PipelineStepId[] = [
+  'productExtract',
+  'marketResearch',
+  'content',
+  'seo',
+  'social',
+  'merged',
+];
+
+function moduleStatusColor(status: ModuleResultEnvelope['status']) {
+  if (status === 'completed') return 'success' as const;
+  if (status === 'failed') return 'danger' as const;
+  if (status === 'running') return 'primary' as const;
+  return 'warning' as const;
+}
+
+export function ModuleProcessView({ modules }: { modules?: ModuleResultEnvelope[] }) {
+  const items = [...(modules ?? [])].sort((a, b) => {
+    const ai = MODULE_STEP_ORDER.indexOf(a.moduleId as PipelineStepId);
+    const bi = MODULE_STEP_ORDER.indexOf(b.moduleId as PipelineStepId);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
+
+  if (!items.length) {
+    return (
+      <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-6 text-sm text-zinc-400">
+        暂无过程记录。完成一次 Pipeline 后将展示各模块的输入摘要、输出摘要与提示词版本。
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-zinc-400">
+        共 {items.length} 个模块步骤 · 按 Pipeline 执行顺序展示
+      </p>
+      {items.map((item, index) => (
+        <div
+          key={`${item.moduleId}-${item.startedAt ?? index}`}
+          className="overflow-hidden rounded-[22px] border border-emerald-400/12 bg-[linear-gradient(180deg,rgba(16,185,129,0.08),rgba(255,255,255,0.02))] p-5 transition duration-200 hover:border-emerald-300/22"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-base font-semibold text-white">
+                  {MODULE_LABELS[item.moduleId] ?? item.moduleName}
+                </p>
+                <Chip size="sm" variant="flat" color={moduleStatusColor(item.status)}>
+                  {item.status}
+                </Chip>
+                {item.promptVersion ? (
+                  <Chip size="sm" variant="bordered" className="border-white/15 text-zinc-300">
+                    {item.promptVersion}
+                  </Chip>
+                ) : null}
+              </div>
+              <p className="text-xs text-zinc-500">
+                {item.roleName} · {item.roleId}
+                {item.model ? ` · ${item.model}` : ''}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 text-xs text-zinc-400">
+              <span>耗时 {formatMs(item.durationMs)}</span>
+              <span>Token {formatTokens(item.totalTokens)}</span>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="rounded-[16px] border border-white/8 bg-black/20 p-3">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">输入摘要</p>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-200">{item.inputSummary || '—'}</p>
+            </div>
+            <div className="rounded-[16px] border border-white/8 bg-black/20 p-3">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">输出摘要</p>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-200">{item.outputSummary || '—'}</p>
+            </div>
+          </div>
+
+          {item.errorMessage ? (
+            <p className="mt-3 text-sm text-rose-300">{item.errorMessage}</p>
+          ) : null}
+        </div>
+      ))}
     </div>
   );
 }

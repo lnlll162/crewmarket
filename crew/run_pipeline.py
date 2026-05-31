@@ -14,6 +14,15 @@ from dotenv import load_dotenv
 # 加载项目根目录 .env，强制覆盖已有环境变量，避免旧占位值残留
 load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=True)
 
+from siliconflow.bootstrap import apply_siliconflow_env_defaults, assert_env_models_whitelisted  # noqa: E402
+
+apply_siliconflow_env_defaults()
+
+from model_config import apply_saved_model_config  # noqa: E402
+
+apply_saved_model_config()
+assert_env_models_whitelisted()
+
 from config import TASK_ENV_PREFIX  # noqa: E402
 from pipeline import (  # noqa: E402
     run_analyze_only,
@@ -48,14 +57,19 @@ def validate_runtime_config() -> None:
 
     for task_id, prefix in TASK_ENV_PREFIX.items():
         model = (os.getenv(f"{prefix}_MODEL") or "").strip()
-        provider = (os.getenv(f"{prefix}_PROVIDER") or os.getenv("LLM_DEFAULT_PROVIDER") or "siliconflow").strip()
-        if provider == "siliconflow" and not model:
-            raise ValueError(f"{task_id} 未配置 {prefix}_MODEL")
+        if not model:
+            raise ValueError(f"{task_id} 未配置 {prefix}_MODEL（bootstrap 未生效）")
 
-    if not (os.getenv("AGENT_IMAGE_MODEL") or "").strip():
-        os.environ["AGENT_IMAGE_MODEL"] = os.getenv("AGENT_IMAGE_MODEL", "black-forest-labs/FLUX.1-schnell")
-    if not (os.getenv("AGENT_VIDEO_MODEL") or "").strip():
-        os.environ["AGENT_VIDEO_MODEL"] = os.getenv("AGENT_VIDEO_MODEL", "Wan-AI/Wan2.1-T2V-14B")
+    # 白名单内 Pipeline + 辅助能力（不含未实测的 TTS/STT）
+    for env_key in (
+        "LLM_DEFAULT_MODEL",
+        "AGENT_IMAGE_MODEL",
+        "AGENT_VIDEO_MODEL",
+        "SILICONFLOW_EMBEDDING_MODEL",
+        "SILICONFLOW_RERANK_MODEL",
+    ):
+        if not (os.getenv(env_key) or "").strip():
+            raise ValueError(f"未配置 {env_key}")
 
 
 def main() -> None:

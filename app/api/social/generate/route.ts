@@ -1,17 +1,18 @@
 import { API_CODES } from '@/constants/errors';
 import { fail, jsonResponse, success } from '@/lib/api-response';
 import { runCrewPipeline } from '@/lib/run-crew';
-import type { SocialGenerateResult } from '@/types';
+import type { ModuleRequestBase, SocialGenerateResult } from '@/types';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = (await request.json()) as ModuleRequestBase;
     if (!body?.content || !body?.sellingPoints) {
       return jsonResponse(fail(API_CODES.PARAM_ERROR), 400);
     }
 
-    const data = (await runCrewPipeline(body, 'social')) as SocialGenerateResult;
-    return jsonResponse(success(data));
+    const result = await runCrewPipeline(body as never, 'social');
+    const data = result.data as SocialGenerateResult;
+    return jsonResponse(success(data, '社媒生成成功'));
   } catch (err) {
     const message = err instanceof Error ? err.message : 'AI 服务异常';
     return jsonResponse(fail(API_CODES.AI_SERVICE_ERROR, message), 500);

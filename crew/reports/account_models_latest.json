@@ -1,0 +1,1457 @@
+{
+  "ok": false,
+  "total": 89,
+  "passed": 88,
+  "failed": 1,
+  "byProbeKind": {
+    "chat": {
+      "total": 63,
+      "passed": 62
+    },
+    "embedding": {
+      "total": 9,
+      "passed": 9
+    },
+    "rerank": {
+      "total": 7,
+      "passed": 7
+    },
+    "image": {
+      "total": 5,
+      "passed": 5
+    },
+    "video_submit": {
+      "total": 1,
+      "passed": 1
+    },
+    "speech": {
+      "total": 2,
+      "passed": 2
+    },
+    "stt": {
+      "total": 2,
+      "passed": 2
+    }
+  },
+  "failures": [
+    {
+      "modelId": "Qwen/Qwen3-VL-32B-Thinking",
+      "catalogKey": "chat",
+      "error": "The read operation timed out"
+    }
+  ],
+  "results": [
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "deepseek-ai/DeepSeek-V4-Pro",
+      "ok": true,
+      "durationMs": 5928,
+      "detail": {
+        "tokens": 56
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "deepseek-ai/DeepSeek-V4-Flash",
+      "ok": true,
+      "durationMs": 2226,
+      "detail": {
+        "tokens": 47
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Pro/moonshotai/Kimi-K2.6",
+      "ok": true,
+      "durationMs": 3030,
+      "detail": {
+        "tokens": 80
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Pro/zai-org/GLM-5.1",
+      "ok": true,
+      "durationMs": 5029,
+      "detail": {
+        "tokens": 91
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "MiniMaxAI/MiniMax-M2.5",
+      "ok": true,
+      "durationMs": 3258,
+      "detail": {
+        "tokens": 136
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Pro/MiniMaxAI/MiniMax-M2.5",
+      "ok": true,
+      "durationMs": 2466,
+      "detail": {
+        "tokens": 120
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Pro/zai-org/GLM-5",
+      "ok": true,
+      "durationMs": 2288,
+      "detail": {
+        "tokens": 101
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Pro/moonshotai/Kimi-K2.5",
+      "ok": true,
+      "durationMs": 3491,
+      "detail": {
+        "tokens": 89
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Pro/zai-org/GLM-4.7",
+      "ok": true,
+      "durationMs": 2376,
+      "detail": {
+        "tokens": 56
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "deepseek-ai/DeepSeek-V3.2",
+      "ok": true,
+      "durationMs": 1107,
+      "detail": {
+        "tokens": 9
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Pro/deepseek-ai/DeepSeek-V3.2",
+      "ok": true,
+      "durationMs": 1492,
+      "detail": {
+        "tokens": 9
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "deepseek-ai/DeepSeek-V3.1-Terminus",
+      "ok": true,
+      "durationMs": 1996,
+      "detail": {
+        "tokens": 12
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Pro/deepseek-ai/DeepSeek-V3.1-Terminus",
+      "ok": true,
+      "durationMs": 1195,
+      "detail": {
+        "tokens": 12
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3.6-35B-A3B",
+      "ok": true,
+      "durationMs": 790,
+      "detail": {
+        "tokens": 20
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3.6-27B",
+      "ok": true,
+      "durationMs": 784,
+      "detail": {
+        "tokens": 20
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3.5-397B-A17B",
+      "ok": true,
+      "durationMs": 5840,
+      "detail": {
+        "tokens": 247
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3.5-122B-A10B",
+      "ok": true,
+      "durationMs": 566,
+      "detail": {
+        "tokens": 20
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3.5-35B-A3B",
+      "ok": true,
+      "durationMs": 721,
+      "detail": {
+        "tokens": 20
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3.5-27B",
+      "ok": true,
+      "durationMs": 873,
+      "detail": {
+        "tokens": 20
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3.5-9B",
+      "ok": true,
+      "durationMs": 582,
+      "detail": {
+        "tokens": 20
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3.5-4B",
+      "ok": true,
+      "durationMs": 1172,
+      "detail": {
+        "tokens": 20
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "PaddlePaddle/PaddleOCR-VL-1.5",
+      "ok": true,
+      "durationMs": 65775,
+      "detail": {
+        "tokens": 15
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "deepseek-ai/DeepSeek-R1",
+      "ok": true,
+      "durationMs": 7576,
+      "detail": {
+        "tokens": 122
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Pro/deepseek-ai/DeepSeek-R1",
+      "ok": true,
+      "durationMs": 11940,
+      "detail": {
+        "tokens": 177
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "deepseek-ai/DeepSeek-V3",
+      "ok": true,
+      "durationMs": 1255,
+      "detail": {
+        "tokens": 8
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Pro/deepseek-ai/DeepSeek-V3",
+      "ok": true,
+      "durationMs": 1045,
+      "detail": {
+        "tokens": 8
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "stepfun-ai/Step-3.5-Flash",
+      "ok": true,
+      "durationMs": 2369,
+      "detail": {
+        "tokens": 22
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3-VL-32B-Instruct",
+      "ok": true,
+      "durationMs": 843,
+      "detail": {
+        "tokens": 13
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3-VL-32B-Thinking",
+      "ok": false,
+      "durationMs": 600414,
+      "error": "The read operation timed out"
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3-VL-8B-Instruct",
+      "ok": true,
+      "durationMs": 659,
+      "detail": {
+        "tokens": 13
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3-VL-8B-Thinking",
+      "ok": true,
+      "durationMs": 2354,
+      "detail": {
+        "tokens": 245
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+      "ok": true,
+      "durationMs": 1003,
+      "detail": {
+        "tokens": 13
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3-VL-30B-A3B-Thinking",
+      "ok": true,
+      "durationMs": 7841,
+      "detail": {
+        "tokens": 244
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3-Omni-30B-A3B-Instruct",
+      "ok": true,
+      "durationMs": 657,
+      "detail": {
+        "tokens": 13
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3-Omni-30B-A3B-Thinking",
+      "ok": true,
+      "durationMs": 1907,
+      "detail": {
+        "tokens": 187
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3-Omni-30B-A3B-Captioner",
+      "ok": true,
+      "durationMs": 661,
+      "detail": {
+        "tokens": 13
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "deepseek-ai/DeepSeek-OCR",
+      "ok": true,
+      "durationMs": 491,
+      "detail": {
+        "tokens": 11
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "inclusionAI/Ling-flash-2.0",
+      "ok": true,
+      "durationMs": 852,
+      "detail": {
+        "tokens": 23
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "inclusionAI/Ling-mini-2.0",
+      "ok": true,
+      "durationMs": 813,
+      "detail": {
+        "tokens": 23
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "tencent/Hunyuan-MT-7B",
+      "ok": true,
+      "durationMs": 505,
+      "detail": {
+        "tokens": 7
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "ByteDance-Seed/Seed-OSS-36B-Instruct",
+      "ok": true,
+      "durationMs": 1440,
+      "detail": {
+        "tokens": 41
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "zai-org/GLM-4.5V",
+      "ok": true,
+      "durationMs": 1199,
+      "detail": {
+        "tokens": 44
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "zai-org/GLM-4.5-Air",
+      "ok": true,
+      "durationMs": 713,
+      "detail": {
+        "tokens": 14
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "ok": true,
+      "durationMs": 704,
+      "detail": {
+        "tokens": 13
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "ok": true,
+      "durationMs": 693,
+      "detail": {
+        "tokens": 13
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "tencent/Hunyuan-A13B-Instruct",
+      "ok": true,
+      "durationMs": 709,
+      "detail": {
+        "tokens": 18
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+      "ok": true,
+      "durationMs": 6679,
+      "detail": {
+        "tokens": 182
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3-32B",
+      "ok": true,
+      "durationMs": 4090,
+      "detail": {
+        "tokens": 107
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3-14B",
+      "ok": true,
+      "durationMs": 697,
+      "detail": {
+        "tokens": 17
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen3-8B",
+      "ok": true,
+      "durationMs": 14854,
+      "detail": {
+        "tokens": 359
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "THUDM/GLM-4-32B-0414",
+      "ok": true,
+      "durationMs": 625,
+      "detail": {
+        "tokens": 11
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "THUDM/GLM-Z1-9B-0414",
+      "ok": true,
+      "durationMs": 3093,
+      "detail": {
+        "tokens": 158
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "THUDM/GLM-4-9B-0414",
+      "ok": true,
+      "durationMs": 1411,
+      "detail": {
+        "tokens": 11
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen2.5-72B-Instruct-128K",
+      "ok": true,
+      "durationMs": 795,
+      "detail": {
+        "tokens": 34
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen2.5-72B-Instruct",
+      "ok": true,
+      "durationMs": 834,
+      "detail": {
+        "tokens": 34
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen2.5-32B-Instruct",
+      "ok": true,
+      "durationMs": 712,
+      "detail": {
+        "tokens": 34
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen2.5-14B-Instruct",
+      "ok": true,
+      "durationMs": 675,
+      "detail": {
+        "tokens": 34
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Qwen/Qwen2.5-7B-Instruct",
+      "ok": true,
+      "durationMs": 842,
+      "detail": {
+        "tokens": 34
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "Pro/Qwen/Qwen2.5-7B-Instruct",
+      "ok": true,
+      "durationMs": 987,
+      "detail": {
+        "tokens": 34
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "LoRA/Qwen/Qwen2.5-32B-Instruct",
+      "ok": true,
+      "durationMs": 625,
+      "detail": {
+        "tokens": 34
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "LoRA/Qwen/Qwen2.5-14B-Instruct",
+      "ok": true,
+      "durationMs": 654,
+      "detail": {
+        "tokens": 34
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "LoRA/Qwen/Qwen2.5-72B-Instruct",
+      "ok": true,
+      "durationMs": 796,
+      "detail": {
+        "tokens": 34
+      }
+    },
+    {
+      "catalogKey": "chat",
+      "probeKind": "chat",
+      "modelId": "LoRA/Qwen/Qwen2.5-7B-Instruct",
+      "ok": true,
+      "durationMs": 695,
+      "detail": {
+        "tokens": 34
+      }
+    },
+    {
+      "catalogKey": "embedding",
+      "probeKind": "embedding",
+      "modelId": "Qwen/Qwen3-VL-Embedding-8B",
+      "ok": true,
+      "durationMs": 677,
+      "detail": {
+        "dims": 4096
+      }
+    },
+    {
+      "catalogKey": "embedding",
+      "probeKind": "embedding",
+      "modelId": "Qwen/Qwen3-Embedding-8B",
+      "ok": true,
+      "durationMs": 633,
+      "detail": {
+        "dims": 4096
+      }
+    },
+    {
+      "catalogKey": "embedding",
+      "probeKind": "embedding",
+      "modelId": "Qwen/Qwen3-Embedding-4B",
+      "ok": true,
+      "durationMs": 808,
+      "detail": {
+        "dims": 2560
+      }
+    },
+    {
+      "catalogKey": "embedding",
+      "probeKind": "embedding",
+      "modelId": "Qwen/Qwen3-Embedding-0.6B",
+      "ok": true,
+      "durationMs": 545,
+      "detail": {
+        "dims": 1024
+      }
+    },
+    {
+      "catalogKey": "embedding",
+      "probeKind": "embedding",
+      "modelId": "BAAI/bge-m3",
+      "ok": true,
+      "durationMs": 545,
+      "detail": {
+        "dims": 1024
+      }
+    },
+    {
+      "catalogKey": "embedding",
+      "probeKind": "embedding",
+      "modelId": "netease-youdao/bce-embedding-base_v1",
+      "ok": true,
+      "durationMs": 513,
+      "detail": {
+        "dims": 768
+      }
+    },
+    {
+      "catalogKey": "embedding",
+      "probeKind": "embedding",
+      "modelId": "BAAI/bge-large-en-v1.5",
+      "ok": true,
+      "durationMs": 492,
+      "detail": {
+        "dims": 1024
+      }
+    },
+    {
+      "catalogKey": "embedding",
+      "probeKind": "embedding",
+      "modelId": "BAAI/bge-large-zh-v1.5",
+      "ok": true,
+      "durationMs": 431,
+      "detail": {
+        "dims": 1024
+      }
+    },
+    {
+      "catalogKey": "embedding",
+      "probeKind": "embedding",
+      "modelId": "Pro/BAAI/bge-m3",
+      "ok": true,
+      "durationMs": 479,
+      "detail": {
+        "dims": 1024
+      }
+    },
+    {
+      "catalogKey": "rerank",
+      "probeKind": "rerank",
+      "modelId": "Qwen/Qwen3-VL-Reranker-8B",
+      "ok": true,
+      "durationMs": 638,
+      "detail": {
+        "topIndex": 0
+      }
+    },
+    {
+      "catalogKey": "rerank",
+      "probeKind": "rerank",
+      "modelId": "Qwen/Qwen3-Reranker-8B",
+      "ok": true,
+      "durationMs": 595,
+      "detail": {
+        "topIndex": 0
+      }
+    },
+    {
+      "catalogKey": "rerank",
+      "probeKind": "rerank",
+      "modelId": "Qwen/Qwen3-Reranker-4B",
+      "ok": true,
+      "durationMs": 500,
+      "detail": {
+        "topIndex": 0
+      }
+    },
+    {
+      "catalogKey": "rerank",
+      "probeKind": "rerank",
+      "modelId": "Qwen/Qwen3-Reranker-0.6B",
+      "ok": true,
+      "durationMs": 557,
+      "detail": {
+        "topIndex": 0
+      }
+    },
+    {
+      "catalogKey": "rerank",
+      "probeKind": "rerank",
+      "modelId": "BAAI/bge-reranker-v2-m3",
+      "ok": true,
+      "durationMs": 518,
+      "detail": {
+        "topIndex": 0
+      }
+    },
+    {
+      "catalogKey": "rerank",
+      "probeKind": "rerank",
+      "modelId": "netease-youdao/bce-reranker-base_v1",
+      "ok": true,
+      "durationMs": 524,
+      "detail": {
+        "topIndex": 1
+      }
+    },
+    {
+      "catalogKey": "rerank",
+      "probeKind": "rerank",
+      "modelId": "Pro/BAAI/bge-reranker-v2-m3",
+      "ok": true,
+      "durationMs": 509,
+      "detail": {
+        "topIndex": 0
+      }
+    },
+    {
+      "catalogKey": "image",
+      "probeKind": "image",
+      "modelId": "Tongyi-MAI/Z-Image-Turbo",
+      "ok": true,
+      "durationMs": 5004,
+      "detail": {
+        "url": "https://s3.siliconflow.cn/temporary/outputs/20wl7cetiqbnj_91aa6c"
+      }
+    },
+    {
+      "catalogKey": "image",
+      "probeKind": "image",
+      "modelId": "Tongyi-MAI/Z-Image",
+      "ok": true,
+      "durationMs": 6817,
+      "detail": {
+        "url": "https://s3.siliconflow.cn/temporary/outputs/296kfqonl2gib_45791a"
+      }
+    },
+    {
+      "catalogKey": "image",
+      "probeKind": "image",
+      "modelId": "baidu/ERNIE-Image-Turbo",
+      "ok": true,
+      "durationMs": 12546,
+      "detail": {
+        "url": "https://s3.6scloud.com/temporary/ernie-image/1780153505-6cab5ca9"
+      }
+    },
+    {
+      "catalogKey": "image",
+      "probeKind": "image",
+      "modelId": "Qwen/Qwen-Image",
+      "ok": true,
+      "durationMs": 16369,
+      "detail": {
+        "url": "https://s3.siliconflow.cn/temporary/outputs/2264mbvr84kgk_d4fdb5"
+      }
+    },
+    {
+      "catalogKey": "image",
+      "probeKind": "image",
+      "modelId": "Kwai-Kolors/Kolors",
+      "ok": true,
+      "durationMs": 4113,
+      "detail": {
+        "url": "https://s3.siliconflow.cn/temporary/None/2tigl0oji7pzl_dda5c76af"
+      }
+    },
+    {
+      "catalogKey": "video",
+      "probeKind": "video_submit",
+      "modelId": "Wan-AI/Wan2.2-T2V-A14B",
+      "ok": true,
+      "durationMs": 618,
+      "detail": {
+        "requestId": "bjjndl7mnk9j"
+      }
+    },
+    {
+      "catalogKey": "speech",
+      "probeKind": "speech",
+      "modelId": "fnlp/MOSS-TTSD-v0.5",
+      "ok": true,
+      "durationMs": 1077,
+      "detail": {
+        "byteLength": 78847
+      }
+    },
+    {
+      "catalogKey": "speech",
+      "probeKind": "speech",
+      "modelId": "FunAudioLLM/CosyVoice2-0.5B",
+      "ok": true,
+      "durationMs": 576,
+      "detail": {
+        "byteLength": 13183
+      }
+    },
+    {
+      "catalogKey": "stt",
+      "probeKind": "stt",
+      "modelId": "TeleAI/TeleSpeechASR",
+      "ok": true,
+      "durationMs": 1509,
+      "detail": {
+        "textPreview": "语音探针测试者此遭探测者人眼探针测试。"
+      }
+    },
+    {
+      "catalogKey": "stt",
+      "probeKind": "stt",
+      "modelId": "FunAudioLLM/SenseVoiceSmall",
+      "ok": true,
+      "durationMs": 733,
+      "detail": {
+        "textPreview": "语音探针测试者词遭探词作人眼探针测试。"
+      }
+    }
+  ],
+  "catalog": {
+    "provider": "siliconflow",
+    "catalogMode": "account_complete",
+    "totalModels": 89,
+    "capabilities": {
+      "chat": {
+        "label": "文本对话",
+        "path": "/chat/completions",
+        "subType": "chat",
+        "modelType": "text",
+        "models": [
+          {
+            "id": "deepseek-ai/DeepSeek-V4-Pro",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "deepseek-ai/DeepSeek-V4-Flash",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Pro/moonshotai/Kimi-K2.6",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Pro/zai-org/GLM-5.1",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "MiniMaxAI/MiniMax-M2.5",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Pro/MiniMaxAI/MiniMax-M2.5",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Pro/zai-org/GLM-5",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Pro/moonshotai/Kimi-K2.5",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Pro/zai-org/GLM-4.7",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "deepseek-ai/DeepSeek-V3.2",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Pro/deepseek-ai/DeepSeek-V3.2",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "deepseek-ai/DeepSeek-V3.1-Terminus",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Pro/deepseek-ai/DeepSeek-V3.1-Terminus",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3.6-35B-A3B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3.6-27B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3.5-397B-A17B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3.5-122B-A10B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3.5-35B-A3B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3.5-27B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3.5-9B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3.5-4B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "PaddlePaddle/PaddleOCR-VL-1.5",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "deepseek-ai/DeepSeek-R1",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Pro/deepseek-ai/DeepSeek-R1",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "deepseek-ai/DeepSeek-V3",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Pro/deepseek-ai/DeepSeek-V3",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "stepfun-ai/Step-3.5-Flash",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-VL-32B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-VL-32B-Thinking",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-VL-8B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-VL-8B-Thinking",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-VL-30B-A3B-Thinking",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-Omni-30B-A3B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-Omni-30B-A3B-Thinking",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-Omni-30B-A3B-Captioner",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "deepseek-ai/DeepSeek-OCR",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "inclusionAI/Ling-flash-2.0",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "inclusionAI/Ling-mini-2.0",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "tencent/Hunyuan-MT-7B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "ByteDance-Seed/Seed-OSS-36B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "zai-org/GLM-4.5V",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "zai-org/GLM-4.5-Air",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "tencent/Hunyuan-A13B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-32B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-14B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-8B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "THUDM/GLM-4-32B-0414",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "THUDM/GLM-Z1-9B-0414",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "THUDM/GLM-4-9B-0414",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen2.5-72B-Instruct-128K",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen2.5-72B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen2.5-32B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen2.5-14B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Pro/Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "LoRA/Qwen/Qwen2.5-32B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "LoRA/Qwen/Qwen2.5-14B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "LoRA/Qwen/Qwen2.5-72B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "LoRA/Qwen/Qwen2.5-7B-Instruct",
+            "object": "model",
+            "ownedBy": ""
+          }
+        ],
+        "count": 63
+      },
+      "embedding": {
+        "label": "向量嵌入",
+        "path": "/embeddings",
+        "subType": "embedding",
+        "modelType": null,
+        "models": [
+          {
+            "id": "Qwen/Qwen3-VL-Embedding-8B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-Embedding-8B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-Embedding-4B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-Embedding-0.6B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "BAAI/bge-m3",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "netease-youdao/bce-embedding-base_v1",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "BAAI/bge-large-en-v1.5",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "BAAI/bge-large-zh-v1.5",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Pro/BAAI/bge-m3",
+            "object": "model",
+            "ownedBy": ""
+          }
+        ],
+        "count": 9
+      },
+      "rerank": {
+        "label": "重排序",
+        "path": "/rerank",
+        "subType": "reranker",
+        "modelType": null,
+        "models": [
+          {
+            "id": "Qwen/Qwen3-VL-Reranker-8B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-Reranker-8B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-Reranker-4B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen3-Reranker-0.6B",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "BAAI/bge-reranker-v2-m3",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "netease-youdao/bce-reranker-base_v1",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Pro/BAAI/bge-reranker-v2-m3",
+            "object": "model",
+            "ownedBy": ""
+          }
+        ],
+        "count": 7
+      },
+      "image_edit": {
+        "label": "图生图",
+        "path": "/images/generations",
+        "subType": "image-to-image",
+        "modelType": null,
+        "models": [],
+        "count": 0
+      },
+      "image": {
+        "label": "文生图",
+        "path": "/images/generations",
+        "subType": "text-to-image",
+        "modelType": null,
+        "models": [
+          {
+            "id": "Tongyi-MAI/Z-Image-Turbo",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Tongyi-MAI/Z-Image",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "baidu/ERNIE-Image-Turbo",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Qwen/Qwen-Image",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "Kwai-Kolors/Kolors",
+            "object": "model",
+            "ownedBy": ""
+          }
+        ],
+        "count": 5
+      },
+      "video": {
+        "label": "文生视频",
+        "path": "/video/submit",
+        "subType": "text-to-video",
+        "modelType": null,
+        "models": [
+          {
+            "id": "Wan-AI/Wan2.2-T2V-A14B",
+            "object": "model",
+            "ownedBy": ""
+          }
+        ],
+        "count": 1
+      },
+      "speech": {
+        "label": "文本转语音",
+        "path": "/audio/speech",
+        "subType": "text-to-speech",
+        "modelType": "audio",
+        "models": [
+          {
+            "id": "fnlp/MOSS-TTSD-v0.5",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "FunAudioLLM/CosyVoice2-0.5B",
+            "object": "model",
+            "ownedBy": ""
+          }
+        ],
+        "count": 2
+      },
+      "stt": {
+        "label": "语音转文本",
+        "path": "/audio/transcriptions",
+        "subType": "speech-to-text",
+        "modelType": "audio",
+        "models": [
+          {
+            "id": "TeleAI/TeleSpeechASR",
+            "object": "model",
+            "ownedBy": ""
+          },
+          {
+            "id": "FunAudioLLM/SenseVoiceSmall",
+            "object": "model",
+            "ownedBy": ""
+          }
+        ],
+        "count": 2
+      }
+    }
+  },
+  "testedAt": "2026-05-30T15:05:41.372590Z"
+}

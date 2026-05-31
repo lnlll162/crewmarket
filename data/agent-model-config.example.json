@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-31T00:00:00.000Z",
+  "provider": "siliconflow",
+  "tasks": {
+    "task.product_extract": { "model": "Qwen/Qwen3-VL-32B-Instruct", "provider": "siliconflow" },
+    "task.market_research": { "model": "deepseek-ai/DeepSeek-V3", "provider": "siliconflow" },
+    "task.content_write": { "model": "Qwen/Qwen2.5-72B-Instruct", "provider": "siliconflow" },
+    "task.seo_optimize": { "model": "THUDM/GLM-4-32B-0414", "provider": "siliconflow" },
+    "task.social_adapt": { "model": "Qwen/Qwen2.5-32B-Instruct", "provider": "siliconflow" },
+    "task.result_merge": { "model": "deepseek-ai/DeepSeek-V3", "provider": "siliconflow" },
+    "task.pdf_report": { "model": "deepseek-ai/DeepSeek-V3", "provider": "siliconflow" }
+  },
+  "generation": {
+    "image": "baidu/ERNIE-Image-Turbo"
+  }
+}

@@ -4,12 +4,12 @@ from typing import Literal
 
 SILICONFLOW_BASE_URL = "https://api.siliconflow.cn/v1"
 
-# 图像生成默认配置
+# 图像生成默认（与 verified_models 白名单一致）
 SILICONFLOW_IMAGE_MODEL = "baidu/ERNIE-Image-Turbo"
 SILICONFLOW_IMAGE_PATH = "/images/generations"
 
-# 视频生成默认配置
-SILICONFLOW_VIDEO_MODEL = "Wan-AI/Wan2.1-T2V-14B"
+# 视频生成默认（与账号实测一致）
+SILICONFLOW_VIDEO_MODEL = "Wan-AI/Wan2.2-T2V-A14B"
 SILICONFLOW_VIDEO_SUBMIT_PATH = "/video/submit"
 SILICONFLOW_VIDEO_STATUS_PATH = "/video/status"
 
@@ -20,6 +20,7 @@ AiTaskId = Literal[
     "task.seo_optimize",
     "task.social_adapt",
     "task.result_merge",
+    "task.pdf_report",
 ]
 
 TASK_ENV_PREFIX: dict[AiTaskId, str] = {
@@ -29,6 +30,7 @@ TASK_ENV_PREFIX: dict[AiTaskId, str] = {
     "task.seo_optimize": "AGENT_MODEL_SEO_OPTIMIZE",
     "task.social_adapt": "AGENT_MODEL_SOCIAL_ADAPT",
     "task.result_merge": "AGENT_MODEL_RESULT_MERGE",
+    "task.pdf_report": "AGENT_MODEL_PDF_REPORT",
 }
 
 AI_TASK_ORDER: list[AiTaskId] = list(TASK_ENV_PREFIX.keys())

@@ -12,9 +12,13 @@ import {
   ContentResultView,
   MarketResultView,
   MergeResultView,
+  ModuleProcessView,
   ProductResultView,
   SeoResultView,
   SocialResultView,
+  SummaryReportView,
+  TelemetrySummaryView,
+  PdfReportView,
 } from './ResultDisplay';
 
 function fileToBase64(file: File): Promise<string> {
@@ -69,7 +73,9 @@ export function GenerateWorkspace() {
   }, [description, imageBase64, productName, category, run]);
 
   const handleExportPdf = useCallback(() => {
-    const source = document.getElementById('pipeline-result-print-area');
+    const pdfArea = document.getElementById('pdf-report-print-area');
+    const fallbackArea = document.getElementById('pipeline-result-print-area');
+    const source = pdfArea ?? fallbackArea;
     if (!source) return;
 
     const popup = window.open('', '_blank', 'noopener,noreferrer,width=1400,height=1000');
@@ -77,26 +83,30 @@ export function GenerateWorkspace() {
 
     const cloned = source.cloneNode(true) as HTMLElement;
     cloned.classList.add('print-root');
+    const isPdfReport = Boolean(pdfArea);
 
     popup.document.documentElement.innerHTML = `
       <head>
-        <title>CrewMarket 结果导出</title>
+        <title>CrewMarket ${isPdfReport ? '评估报告' : '结果导出'}</title>
         <meta charset="utf-8" />
         <style>
-          :root { color-scheme: dark; }
+          :root { color-scheme: ${isPdfReport ? 'light' : 'dark'}; }
           body {
             margin: 0;
-            background: #09090f;
-            color: #f4f4f5;
+            background: ${isPdfReport ? '#f4f4f5' : '#09090f'};
+            color: ${isPdfReport ? '#18181b' : '#f4f4f5'};
             font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           }
           .print-root {
-            padding: 32px;
-            background: linear-gradient(180deg, rgba(24,24,27,1) 0%, rgba(9,9,15,1) 100%);
+            padding: ${isPdfReport ? '24px' : '32px'};
+            background: ${isPdfReport ? '#ffffff' : 'linear-gradient(180deg, rgba(24,24,27,1) 0%, rgba(9,9,15,1) 100%)'};
+            max-width: ${isPdfReport ? '210mm' : 'none'};
+            margin: ${isPdfReport ? '0 auto' : '0'};
           }
           .print-root * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .print-root img { max-width: 100%; page-break-inside: avoid; }
-          .print-root > * { page-break-inside: avoid; }
+          .print-root section, .print-root header, .print-root footer { page-break-inside: avoid; }
+          @page { size: A4; margin: 16mm; }
         </style>
       </head>
       <body></body>
@@ -336,6 +346,23 @@ export function GenerateWorkspace() {
                       ) : (
                         <EmptyState message="汇总结果不可用" />
                       )}
+                    </Tab>
+                    <Tab key="telemetry" title="运行统计">
+                      <TelemetrySummaryView telemetry={result?.telemetry} summary={result?.summary} />
+                    </Tab>
+                    <Tab key="process" title="过程记录">
+                      <ModuleProcessView modules={result?.modules} />
+                    </Tab>
+                    <Tab key="report" title="评估报告">
+                      <SummaryReportView summary={result?.summary} />
+                      {result?.pdfReport ? (
+                        <div className="mt-8 space-y-3">
+                          <p className="text-sm text-zinc-400">
+                            下方为 PDF 专业报告预览（由独立报告模型基于 summary 生成，点击「导出 PDF」将优先导出此版式）
+                          </p>
+                          <PdfReportView report={result.pdfReport} />
+                        </div>
+                      ) : null}
                     </Tab>
                     <Tab key="pipeline" title="流程字段">
                       <div className="space-y-3 rounded-[20px] bg-black/20 p-4 text-sm text-zinc-300 ring-1 ring-inset ring-white/5">

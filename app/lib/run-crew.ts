@@ -1,6 +1,6 @@
 import { spawn } from 'child_process';
 import path from 'path';
-import type { PipelineRunRequest } from '@/types';
+import type { PipelineRunRequest, PipelineRunResponseData, PipelineStepId, TelemetryRecord } from '@/types';
 
 function projectRoot() {
   return process.cwd();
@@ -11,9 +11,60 @@ function pythonExecutable() {
   return venvPython;
 }
 
-function runPythonPipeline(step: string, payload: unknown): Promise<unknown> {
+interface PythonPipelineEnvelope {
+  status: string;
+  data?: {
+    pipelineId: string;
+    steps: PipelineRunResponseData['steps'];
+    result?: PipelineRunResponseData['result'];
+    pendingConfirmations: string[];
+    generatedAt: string;
+  };
+  telemetry?: TelemetryRecord[];
+  modules?: PipelineRunResponseData['modules'];
+  summary?: PipelineRunResponseData['summary'];
+  pdfReport?: PipelineRunResponseData['pdfReport'];
+  error?: { step: PipelineStepId; message: string };
+  generatedAt?: string;
+}
+
+function mapPipelineEnvelope(parsed: PythonPipelineEnvelope): PipelineRunResponseData {
+  const fallbackStep: PipelineStepId = 'productExtract';
+  if (!parsed.data) {
+    return {
+      pipelineId: '',
+      status: 'failed',
+      steps: {},
+      pendingConfirmations: [],
+      generatedAt: parsed.generatedAt ?? new Date().toISOString(),
+      telemetry: parsed.telemetry,
+      modules: parsed.modules,
+      summary: parsed.summary,
+      pdfReport: parsed.pdfReport,
+      error: parsed.error ?? { step: fallbackStep, message: 'Pipeline 执行失败' },
+    };
+  }
+
+  return {
+    ...parsed.data,
+    status: parsed.status === 'completed' ? 'completed' : 'failed',
+    telemetry: parsed.telemetry,
+    modules: parsed.modules,
+    summary: parsed.summary,
+    pdfReport: parsed.pdfReport,
+    error: parsed.error,
+  };
+}
+
+function parseJsonOutput(stdout: string) {
+  return JSON.parse(stdout) as PythonPipelineEnvelope;
+}
+
+function runPythonPipeline(step: string, payload: unknown): Promise<PipelineRunResponseData> {
   const script = path.join(projectRoot(), 'crew', 'run_pipeline.py');
   const python = pythonExecutable();
+  const startedAt = Date.now();
+
   return new Promise((resolve, reject) => {
     const child = spawn(python, [script, '--step', step], {
       cwd: projectRoot(),
@@ -36,12 +87,21 @@ function runPythonPipeline(step: string, payload: unknown): Promise<unknown> {
     });
     child.on('error', reject);
     child.on('close', (code) => {
+      const finishedAt = Date.now();
       if (code !== 0) {
         reject(new Error(stderr || `Python exited with code ${code}`));
         return;
       }
       try {
-        resolve(JSON.parse(stdout));
+        const parsed = parseJsonOutput(stdout);
+        const mapped = mapPipelineEnvelope(parsed);
+        if (mapped.telemetry?.length) {
+          mapped.telemetry = mapped.telemetry.map((item) => ({
+            ...item,
+            durationMs: item.durationMs ?? Math.max(0, finishedAt - startedAt),
+          }));
+        }
+        resolve(mapped);
       } catch (err) {
         reject(new Error(`Python 输出解析失败: ${(err as Error).message}\n${stdout}\n${stderr}`));
       }
