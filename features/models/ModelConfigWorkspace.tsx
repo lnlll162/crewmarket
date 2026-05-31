@@ -136,6 +136,7 @@ function BindingCard({
         </div>
         <Select
           label="选择模型"
+          labelPlacement="outside"
           aria-label={`${title} 模型`}
           selectedKeys={[selected]}
           isDisabled={disabled}
@@ -144,7 +145,7 @@ function BindingCard({
             if (model) onChange(String(model));
           }}
           popoverProps={SELECT_POPOVER_PROPS}
-          classNames={SELECT_CLASS_NAMES}
+          classNames={{ ...SELECT_CLASS_NAMES, base: 'space-y-2' }}
           listboxProps={{ className: 'max-h-60 overflow-y-auto' }}
         >
           {options.map((item) => (

@@ -16,6 +16,16 @@ PROMPT_VERSIONS: dict[str, str] = {
     "pdfReport": "v1.0.0",
 }
 
+PROMPT_CHANGELOG: dict[str, list[str]] = {
+    "productExtract": ["v1.0.0: 初始化固定产品提取提示词与输出规则"],
+    "marketResearch": ["v1.0.0: 初始化固定市场分析提示词与输出规则"],
+    "content": ["v1.0.0: 初始化固定文案生成提示词，覆盖海报与视频素材"],
+    "seo": ["v1.0.0: 初始化固定 SEO 与渠道适配提示词"],
+    "social": ["v1.0.0: 初始化固定社媒改写提示词"],
+    "merged": ["v1.0.0: 初始化固定汇总评估提示词"],
+    "pdfReport": ["v1.0.0: 初始化固定 PDF 报告撰写提示词"],
+}
+
 OUTPUT_RULE = (
     "你必须只输出一个合法 JSON 对象，字段名与任务 schema 完全一致，"
     "禁止 markdown、解释文字或额外字段。"
@@ -30,6 +40,10 @@ class RoleDefinition(TypedDict):
     role: str
     goal: str
     systemPrompt: str
+    inputContract: list[str]
+    outputContract: list[str]
+    modelPreference: str
+    allowedTools: list[str]
 
 
 # 单一真相源：CrewAI Agent + 前端 ROLE_PROMPTS + telemetry roleId 对齐
@@ -45,6 +59,10 @@ ROLE_DEFINITIONS: dict[str, RoleDefinition] = {
             "你是产品信息提取专家，负责从文本和图片中提取商品的基础信息、"
             "结构化卖点和可用于后续分析的关键属性。"
         ),
+        "inputContract": ["description", "image assets", "productName optional", "category optional"],
+        "outputContract": ["productName", "category", "attributes", "sellingPoints", "summary"],
+        "modelPreference": "Qwen/Qwen3-VL-32B-Instruct",
+        "allowedTools": [],
     },
     "marketResearch": {
         "roleId": "marketResearch",
@@ -54,6 +72,10 @@ ROLE_DEFINITIONS: dict[str, RoleDefinition] = {
         "role": "市场与品牌策略师",
         "goal": "分析产品类目趋势、竞品风格、目标用户画像，并给出品牌调性与视觉风格建议",
         "systemPrompt": "你擅长电商市场研究、品牌定位和风格提炼，输出简洁、可落地。",
+        "inputContract": ["product extract result", "user options"],
+        "outputContract": ["marketTrends", "competitorStyle", "userPersona", "brandTone", "visualStyle", "marketingSuggestions"],
+        "modelPreference": "deepseek-ai/DeepSeek-V3",
+        "allowedTools": [],
     },
     "content": {
         "roleId": "content",
@@ -66,6 +88,10 @@ ROLE_DEFINITIONS: dict[str, RoleDefinition] = {
             "你是资深电商营销文案，风格真实可信，不夸大宣传，"
             "禁止空泛套话，且要兼顾不同营销物料的统一口径。"
         ),
+        "inputContract": ["product extract result", "market research result", "user options"],
+        "outputContract": ["title", "sellingPointCopy", "detailPageContent", "conversionDescription", "videoScript", "posterCopy", "imageIdeas", "videoMaterial", "imageGeneration", "videoGeneration"],
+        "modelPreference": "Qwen/Qwen2.5-72B-Instruct",
+        "allowedTools": [],
     },
     "seo": {
         "roleId": "seo",
@@ -75,6 +101,10 @@ ROLE_DEFINITIONS: dict[str, RoleDefinition] = {
         "role": "渠道适配与搜索优化师",
         "goal": "输出关键词、搜索友好标题、搜索文案，并生成多平台适配文案",
         "systemPrompt": "你熟悉电商平台搜索与内容分发规则，擅长关键词布局与平台适配。",
+        "inputContract": ["content result", "category optional"],
+        "outputContract": ["keywords", "optimizedTitle", "searchFriendlyCopy", "channelAdaptation"],
+        "modelPreference": "THUDM/GLM-4-32B-0414",
+        "allowedTools": [],
     },
     "social": {
         "roleId": "social",
@@ -84,6 +114,10 @@ ROLE_DEFINITIONS: dict[str, RoleDefinition] = {
         "role": "营销物料适配师",
         "goal": "为各平台提供差异化短文案、话题标签与短视频脚本建议",
         "systemPrompt": "你熟悉国内社媒平台语境与短视频传播逻辑，三平台内容不可雷同。",
+        "inputContract": ["product extract result", "content result"],
+        "outputContract": ["copies", "scriptSuggestion"],
+        "modelPreference": "Qwen/Qwen2.5-32B-Instruct",
+        "allowedTools": [],
     },
     "merged": {
         "roleId": "merged",
@@ -96,6 +130,10 @@ ROLE_DEFINITIONS: dict[str, RoleDefinition] = {
             "你是 CrewMarket 汇总评估模型，只综合已有模块结果与 telemetry，"
             "不重新生成业务物料。"
         ),
+        "inputContract": ["module results", "role runs", "telemetry", "constraints"],
+        "outputContract": ["executiveSummary", "moduleSummary", "roleEvaluation", "performanceReview", "riskAssessment", "opportunityAnalysis", "recommendations", "pdfHighlights", "confidence", "missingInfo"],
+        "modelPreference": "deepseek-ai/DeepSeek-V3",
+        "allowedTools": [],
     },
     "pdfReport": {
         "roleId": "pdfReport",
@@ -108,6 +146,10 @@ ROLE_DEFINITIONS: dict[str, RoleDefinition] = {
             "你擅长撰写结构清晰、语气专业、可打印的评估报告。"
             "只基于输入的 summary 与 modules 扩写，不编造事实。"
         ),
+        "inputContract": ["summary output", "telemetry", "task context"],
+        "outputContract": ["reportTitle", "subtitle", "generatedAt", "pipelineId", "promptVersion", "confidence", "coverHighlights", "sections", "telemetrySnapshot", "disclaimer"],
+        "modelPreference": "deepseek-ai/DeepSeek-V3",
+        "allowedTools": [],
     },
 }
 
@@ -119,6 +161,24 @@ def agent_backstory(role_id: str) -> str:
 
 def role_meta(role_id: str) -> RoleDefinition:
     return ROLE_DEFINITIONS[role_id]
+
+
+def role_contract(role_id: str) -> dict[str, Any]:
+    meta = ROLE_DEFINITIONS[role_id]
+    return {
+        "roleId": meta["roleId"],
+        "roleName": meta["roleName"],
+        "version": meta["version"],
+        "telemetryTag": meta["telemetryTag"],
+        "modelPreference": meta["modelPreference"],
+        "inputContract": meta["inputContract"],
+        "outputContract": meta["outputContract"],
+        "allowedTools": meta["allowedTools"],
+    }
+
+
+def prompt_changelog(role_id: str) -> list[str]:
+    return PROMPT_CHANGELOG.get(role_id, [])
 
 GLOBAL_RULES = """
 【全局规则】

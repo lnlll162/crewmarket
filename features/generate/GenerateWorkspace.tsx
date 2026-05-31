@@ -5,7 +5,7 @@ import { Button, Card, CardBody, Tab, Tabs } from '@heroui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { EmptyState } from '@/components/ui/EmptyState';
-import type { PipelineRunRequest, PipelineStepId } from '@/types';
+import type { PipelineRunRequest, PipelineStepId, ProductInputAsset } from '@/types';
 import { PipelineProgress, PipelineOverview } from './PipelineProgress';
 import { usePipelineRun } from './usePipelineRun';
 import {
@@ -34,43 +34,88 @@ export function GenerateWorkspace() {
   const [description, setDescription] = useState('');
   const [productName, setProductName] = useState('');
   const [category, setCategory] = useState('');
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageBase64, setImageBase64] = useState<string | undefined>();
+  const [audience, setAudience] = useState('');
+  const [brandStyle, setBrandStyle] = useState('');
+  const [priceRange, setPriceRange] = useState('');
+  const [competitorInfo, setCompetitorInfo] = useState('');
+  const [marketingGoal, setMarketingGoal] = useState('');
+  const [textAssets, setTextAssets] = useState<Array<{ id: string; label: string; content: string }>>([
+    { id: 'asset-product', label: '产品资料', content: '' },
+    { id: 'asset-competitor', label: '竞品信息', content: '' },
+    { id: 'asset-brand', label: '品牌要求', content: '' },
+  ]);
+  const [imageAssets, setImageAssets] = useState<Array<{ id: string; label: string; preview: string | null; base64?: string }>>([
+    { id: 'image-1', label: '主图', preview: null },
+    { id: 'image-2', label: '参考图', preview: null },
+  ]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const { loading, error, stepStatus, currentStep, steps, result, run } = usePipelineRun();
 
-  const onImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const onImageChange = async (assetId: string, file: File) => {
     const objectUrl = URL.createObjectURL(file);
     const b64 = await fileToBase64(file);
-    setImagePreview(objectUrl);
-    setImageBase64(b64);
+    setImageAssets((prev) =>
+      prev.map((asset) => (asset.id === assetId ? { ...asset, preview: objectUrl, base64: b64 } : asset)),
+    );
   };
 
   useEffect(() => {
     return () => {
-      if (imagePreview?.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview);
-      }
+      imageAssets.forEach((asset) => {
+        if (asset.preview?.startsWith('blob:')) URL.revokeObjectURL(asset.preview);
+      });
     };
-  }, [imagePreview]);
+  }, [imageAssets]);
 
   const handleGenerate = useCallback(async () => {
-    if (!description.trim()) return;
-
     const payload: PipelineRunRequest = {
-      description: description.trim(),
-      imageBase64,
+      description: description.trim() || undefined,
+      imageBase64: imageAssets[0]?.base64,
+      assets: [
+        ...textAssets
+          .filter((asset) => asset.content.trim().length > 0)
+          .map<ProductInputAsset>((asset) => ({
+            id: asset.id,
+            type: 'text',
+            label: asset.label,
+            content: asset.content.trim(),
+          })),
+        ...imageAssets
+          .filter((asset) => asset.base64 || asset.preview)
+          .map<ProductInputAsset>((asset) => ({
+            id: asset.id,
+            type: 'image',
+            label: asset.label,
+            base64: asset.base64,
+            url: asset.preview ?? undefined,
+          })),
+      ],
       options: {
         productName: productName || undefined,
         category: category || undefined,
+        targetAudience: audience || undefined,
+        brandStyle: brandStyle || undefined,
+        priceRange: priceRange || undefined,
+        competitorInfo: competitorInfo || undefined,
+        marketingGoal: marketingGoal || undefined,
       },
     };
 
     await run(payload);
-  }, [description, imageBase64, productName, category, run]);
+  }, [
+    description,
+    imageAssets,
+    textAssets,
+    productName,
+    category,
+    audience,
+    brandStyle,
+    priceRange,
+    competitorInfo,
+    marketingGoal,
+    run,
+  ]);
 
   const handleExportPdf = useCallback(() => {
     const pdfArea = document.getElementById('pdf-report-print-area');
@@ -207,9 +252,9 @@ export function GenerateWorkspace() {
                   <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 shadow-inner shadow-black/15">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                       <div className="flex h-24 w-full shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] sm:w-32">
-                        {imagePreview ? (
+                        {imageAssets[0]?.preview ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={imagePreview} alt="产品图片预览" className="h-full w-full object-contain" />
+                          <img src={imageAssets[0].preview} alt="产品图片预览" className="h-full w-full object-contain" />
                         ) : (
                           <span className="px-4 text-center text-xs text-zinc-500">暂无图片</span>
                         )}
@@ -217,7 +262,7 @@ export function GenerateWorkspace() {
                       <div className="min-w-0 flex-1 space-y-3">
                         <div>
                           <p className="text-sm font-medium text-zinc-100">
-                            {imagePreview ? '图片已选择' : '上传产品图片'}
+                            {imageAssets[0]?.preview ? '图片已选择' : '上传产品图片'}
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -233,16 +278,15 @@ export function GenerateWorkspace() {
                             }}
                             isDisabled={loading}
                           >
-                            {imagePreview ? '重新上传图片' : '选择图片'}
+                            {imageAssets[0]?.preview ? '重新上传图片' : '选择图片'}
                           </Button>
-                          {imagePreview && (
+                          {imageAssets[0]?.preview && (
                             <Button
                               type="button"
                               size="sm"
                               variant="light"
                               onPress={() => {
-                                setImagePreview(null);
-                                setImageBase64(undefined);
+                                setImageAssets((prev) => prev.map((asset, index) => (index === 0 ? { ...asset, preview: null, base64: undefined } : asset)));
                                 if (fileInputRef.current) fileInputRef.current.value = '';
                               }}
                               isDisabled={loading}
@@ -258,7 +302,11 @@ export function GenerateWorkspace() {
                       id="product-image-upload"
                       type="file"
                       accept="image/jpeg,image/png,image/webp,image/*"
-                      onChange={onImageChange}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        await onImageChange(imageAssets[0]?.id ?? 'image-1', file);
+                      }}
                       className="sr-only"
                       disabled={loading}
                     />

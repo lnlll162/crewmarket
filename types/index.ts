@@ -25,10 +25,20 @@ export interface ProductInputOptions {
   platformRequirements?: string[];
 }
 
+export interface ProductInputAsset {
+  id: string;
+  type: 'text' | 'image';
+  label?: string;
+  content?: string;
+  url?: string;
+  base64?: string;
+}
+
 export interface ProductInput {
-  description: string;
+  description?: string;
   imageUrl?: string;
   imageBase64?: string;
+  assets?: ProductInputAsset[];
   options?: ProductInputOptions;
 }
 
@@ -210,7 +220,7 @@ export interface RoleDefinition {
   version: string;
   telemetryTag?: string;
   systemPrompt: string;
-  taskPromptTemplate: string;
+  taskPromptTemplate?: string;
   inputContract: string[];
   outputContract: string[];
   allowedTools?: string[];

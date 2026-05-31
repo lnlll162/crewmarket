@@ -625,11 +625,11 @@ export function TelemetrySummaryView({
   }
 
   const totals = {
-    durationMs: records.reduce((sum, item) => sum + (item.durationMs ?? 0), 0),
+    durationMs: perf?.totalDurationMs ?? records.reduce((sum, item) => sum + (item.durationMs ?? 0), 0),
     inputTokens: perf?.totalInputTokens ?? perf?.inputTokens ?? records.reduce((sum, item) => sum + (item.inputTokens ?? 0), 0),
     outputTokens: perf?.totalOutputTokens ?? perf?.outputTokens ?? records.reduce((sum, item) => sum + (item.outputTokens ?? 0), 0),
     totalTokens: perf?.totalTokens ?? records.reduce((sum, item) => sum + (item.totalTokens ?? 0), 0),
-    successRate: perf?.successRate,
+    successRate: perf?.successRate ?? (records.length ? records.filter((item) => item.status === 'success').length / records.length : undefined),
   };
 
   return (
@@ -797,6 +797,56 @@ export function SummaryReportView({ summary }: { summary?: PipelineSummaryOutput
         </SectionCard>
       ) : null}
 
+      {summary.moduleSummary?.length ? (
+        <SectionCard
+          title="模块汇总"
+          tone={{
+            shell: 'border border-sky-400/12 bg-sky-500/6',
+            header: 'text-sky-100',
+            button: 'text-sky-200',
+          }}
+        >
+          <div className="space-y-3">
+            {summary.moduleSummary.map((item, index) => {
+              const record = item as Record<string, unknown>;
+              const title = String(record.title ?? record.moduleName ?? record.moduleId ?? `模块 ${index + 1}`);
+              const detail = String(record.detail ?? record.summary ?? record.content ?? '暂无说明');
+              return (
+                <div key={`${title}-${index}`} className="rounded-lg border border-sky-400/10 bg-black/20 p-3">
+                  <p className="font-medium text-white">{title}</p>
+                  <p className="mt-1 text-sm text-zinc-300">{detail}</p>
+                </div>
+              );
+            })}
+          </div>
+        </SectionCard>
+      ) : null}
+
+      {summary.roleEvaluation?.length ? (
+        <SectionCard
+          title="角色评估"
+          tone={{
+            shell: 'border border-fuchsia-400/12 bg-fuchsia-500/6',
+            header: 'text-fuchsia-100',
+            button: 'text-fuchsia-200',
+          }}
+        >
+          <div className="space-y-3">
+            {summary.roleEvaluation.map((item) => (
+              <div key={item.roleId} className="rounded-lg border border-fuchsia-400/10 bg-black/20 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-medium text-white">{item.roleName}</p>
+                  {typeof item.score === 'number' ? (
+                    <Chip size="sm" variant="flat" color="secondary">{item.score}</Chip>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-sm text-zinc-300">{item.evaluation}</p>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      ) : null}
+
       {summary.pdfHighlights?.length ? (
         <div className="rounded-[20px] border border-white/8 bg-white/[0.03] p-4">
           <p className="text-xs uppercase tracking-wide text-zinc-500">PDF 亮点</p>
@@ -887,11 +937,13 @@ export function PdfReportView({
       {snap ? (
         <div className="mt-10 rounded-lg border border-zinc-200 bg-zinc-50 p-5 break-inside-avoid">
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">运行统计快照</p>
-          <div className="mt-3 grid gap-2 text-sm text-zinc-700 sm:grid-cols-3">
+          <div className="mt-3 grid gap-2 text-sm text-zinc-700 sm:grid-cols-3 lg:grid-cols-4">
             <p>总耗时：{formatMs(snap.totalDurationMs)}</p>
             <p>总 Token：{formatTokens(snap.totalTokens)}</p>
-            <p>成功率：{formatPercent(snap.successRate)}</p>
+            <p>输入 Token：{formatTokens(snap.totalInputTokens)}</p>
+            <p>输出 Token：{formatTokens(snap.totalOutputTokens)}</p>
           </div>
+          <p className="mt-2 text-sm text-zinc-700">成功率：{formatPercent(snap.successRate)}</p>
           {snap.summaryText ? <p className="mt-3 text-sm leading-relaxed text-zinc-600">{snap.summaryText}</p> : null}
         </div>
       ) : null}

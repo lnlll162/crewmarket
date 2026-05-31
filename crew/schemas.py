@@ -205,44 +205,39 @@ def validate_content(data: Any) -> dict[str, Any]:
     }
 
     poster = data.get("posterCopy")
-    if isinstance(poster, dict):
-        result["posterCopy"] = {
-            "headline": _ensure_str(poster.get("headline"), "posterCopy.headline"),
-            "subheadline": _ensure_str(poster.get("subheadline"), "posterCopy.subheadline"),
-            "slogan": _ensure_str(poster.get("slogan"), "posterCopy.slogan"),
-        }
+    if not isinstance(poster, dict):
+        raise SchemaValidationError("posterCopy 必须为对象")
+    result["posterCopy"] = {
+        "headline": _ensure_str(poster.get("headline"), "posterCopy.headline"),
+        "subheadline": _ensure_str(poster.get("subheadline"), "posterCopy.subheadline"),
+        "slogan": _ensure_str(poster.get("slogan"), "posterCopy.slogan"),
+    }
 
     image_ideas_raw = data.get("imageIdeas")
+    if not isinstance(image_ideas_raw, list) or len(image_ideas_raw) < 3:
+        raise SchemaValidationError("imageIdeas 至少需要 3 条")
     image_ideas: list[dict[str, Any]] = []
-    if isinstance(image_ideas_raw, list):
-        for index, item in enumerate(image_ideas_raw[:5]):
-            if not isinstance(item, dict):
-                continue
-            try:
-                image_ideas.append(
-                    {
-                        "title": _ensure_str(item.get("title"), f"imageIdeas[{index}].title"),
-                        "description": _ensure_str(item.get("description"), f"imageIdeas[{index}].description"),
-                        "usage": _ensure_str(item.get("usage"), f"imageIdeas[{index}].usage"),
-                    }
-                )
-            except SchemaValidationError:
-                continue
+    for index, item in enumerate(image_ideas_raw[:5]):
+        if not isinstance(item, dict):
+            raise SchemaValidationError(f"imageIdeas[{index}] 必须为对象")
+        image_ideas.append(
+            {
+                "title": _ensure_str(item.get("title"), f"imageIdeas[{index}].title"),
+                "description": _ensure_str(item.get("description"), f"imageIdeas[{index}].description"),
+                "usage": _ensure_str(item.get("usage"), f"imageIdeas[{index}].usage"),
+            }
+        )
     result["imageIdeas"] = image_ideas
 
     video_material = data.get("videoMaterial")
-    if isinstance(video_material, dict):
-        try:
-            result["videoMaterial"] = {
-                "hook": _ensure_str(video_material.get("hook"), "videoMaterial.hook"),
-                "scenes": _ensure_str_list(video_material.get("scenes"), "videoMaterial.scenes", min_len=2, max_len=6),
-                "voiceover": _ensure_str(video_material.get("voiceover"), "videoMaterial.voiceover"),
-                "caption": _ensure_str(video_material.get("caption"), "videoMaterial.caption"),
-            }
-        except SchemaValidationError:
-            result["videoMaterial"] = {"hook": "", "scenes": [], "voiceover": "", "caption": ""}
-    else:
-        result["videoMaterial"] = {"hook": "", "scenes": [], "voiceover": "", "caption": ""}
+    if not isinstance(video_material, dict):
+        raise SchemaValidationError("videoMaterial 必须为对象")
+    result["videoMaterial"] = {
+        "hook": _ensure_str(video_material.get("hook"), "videoMaterial.hook"),
+        "scenes": _ensure_str_list(video_material.get("scenes"), "videoMaterial.scenes", min_len=3, max_len=6),
+        "voiceover": _ensure_str(video_material.get("voiceover"), "videoMaterial.voiceover"),
+        "caption": _ensure_str(video_material.get("caption"), "videoMaterial.caption"),
+    }
 
     result["imageGeneration"] = _normalize_optional_generation(data.get("imageGeneration"), "imageGeneration")
     result["videoGeneration"] = _normalize_optional_generation(data.get("videoGeneration"), "videoGeneration")
