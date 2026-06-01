@@ -38,7 +38,7 @@ function projectRoot() {
 }
 
 function pythonExecutable() {
-  return path.join(projectRoot(), 'crew', '.venv', 'Scripts', 'python.exe');
+  return process.env.PYTHON_EXECUTABLE || 'python';
 }
 
 export async function probeConfigBindings(mode: 'offline' | 'live'): Promise<ConfigBindingProbeReport> {

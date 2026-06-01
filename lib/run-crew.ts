@@ -3,8 +3,7 @@ import path from 'path';
 import type { PipelineRunRequest, PipelineRunResponseData } from '@/types';
 
 function getPythonPath(): string {
-  const venvPython = path.join(process.cwd(), 'crew', '.venv', 'Scripts', 'python.exe');
-  return venvPython;
+  return process.env.PYTHON_EXECUTABLE || 'python';
 }
 
 export async function runCrewPipeline(
@@ -41,8 +40,19 @@ export async function runCrewPipeline(
         return;
       }
       try {
-        const line = stdout.trim().split('\n').filter(Boolean).pop() ?? '{}';
-        resolve(JSON.parse(line));
+        const lines = stdout.trim().split('\n').filter(Boolean);
+        let jsonLine = '';
+        for (let i = lines.length - 1; i >= 0; i--) {
+          const trimmed = lines[i].trim();
+          if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+            jsonLine = trimmed;
+            break;
+          }
+        }
+        if (!jsonLine) {
+          throw new Error('stdout 中未找到有效 JSON');
+        }
+        resolve(JSON.parse(jsonLine));
       } catch {
         reject(new Error(`解析 CrewAI 输出失败：${stdout.slice(0, 500)}`));
       }

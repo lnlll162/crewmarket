@@ -7,8 +7,7 @@ function projectRoot() {
 }
 
 function pythonExecutable() {
-  const venvPython = path.join(projectRoot(), 'crew', '.venv', 'Scripts', 'python.exe');
-  return venvPython;
+  return process.env.PYTHON_EXECUTABLE || 'python';
 }
 
 interface PythonPipelineEnvelope {
@@ -57,7 +56,18 @@ function mapPipelineEnvelope(parsed: PythonPipelineEnvelope): PipelineRunRespons
 }
 
 function parseJsonOutput(stdout: string) {
-  return JSON.parse(stdout) as PythonPipelineEnvelope;
+  const lines = stdout.trim().split('\n').filter(Boolean);
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const trimmed = lines[i].trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try {
+        return JSON.parse(trimmed) as PythonPipelineEnvelope;
+      } catch {
+        continue;
+      }
+    }
+  }
+  throw new Error('stdout 中未找到有效 JSON');
 }
 
 function runPythonPipeline(step: string, payload: unknown): Promise<PipelineRunResponseData> {
