@@ -185,13 +185,6 @@ export function GenerateWorkspace() {
     <div className="relative overflow-hidden text-zinc-100">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_10%,rgba(168,85,247,0.14),transparent_26%),radial-gradient(circle_at_80%_0%,rgba(236,72,153,0.08),transparent_22%),radial-gradient(circle_at_70%_70%,rgba(139,92,246,0.08),transparent_28%)]" />
       <div className="space-y-8">
-        <section className="rounded-[24px] bg-[linear-gradient(180deg,rgba(27,27,40,0.92),rgba(12,12,18,0.96))] p-6 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-2xl transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_64px_rgba(0,0,0,0.3)]">
-          <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-violet-300">CREWAI · 多智能体</p>
-            <h2 className="text-3xl font-semibold tracking-tight text-white">产品输入与生成控制台</h2>
-          </div>
-        </section>
-
         <Card className="relative overflow-hidden rounded-[28px] bg-[linear-gradient(180deg,rgba(29,24,50,0.94),rgba(12,12,18,0.98))] shadow-[0_28px_90px_rgba(0,0,0,0.34)] backdrop-blur-2xl transition duration-300 hover:-translate-y-1 hover:shadow-[0_34px_110px_rgba(0,0,0,0.42)]">
           <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.05),transparent_28%)]" />
           <div className="pointer-events-none absolute -right-10 top-12 h-32 w-32 rounded-full bg-violet-500/18 blur-3xl" />

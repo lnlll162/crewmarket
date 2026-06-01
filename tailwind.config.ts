@@ -11,7 +11,16 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'var(--font-sans)', 'system-ui', 'sans-serif'],
+      },
+      letterSpacing: {
+        tightest: '-0.04em',
+      },
+      animation: {
+        'float-slow': 'float-slow 6s ease-in-out infinite',
+        'spin-slow': 'spin-slow 18s linear infinite',
+        marquee: 'marquee 28s linear infinite',
       },
     },
   },
