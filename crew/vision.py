@@ -14,7 +14,7 @@ from prompts import GLOBAL_RULES
 from schemas import SchemaValidationError, parse_json, validate_product
 from telemetry_usage import normalize_usage
 
-MAX_VISION_RETRIES = 3
+MAX_VISION_RETRIES = 5
 MAX_DESCRIPTION_CHARS = 1800
 
 
@@ -152,6 +152,10 @@ def extract_product(
         except (SchemaValidationError, ValueError, TypeError, KeyError) as exc:
             last_error = str(exc)
             retry_hint = last_error
+        except httpx.HTTPError as exc:
+            # 网络/连接闪断（如 RemoteProtocolError）也重试，不再让单次断开直接失败
+            last_error = f"{type(exc).__name__}: {exc}"
+            retry_hint = ""
 
     if telemetry is not None:
         telemetry.append(

@@ -3,18 +3,178 @@
 @tailwind utilities;
 
 :root {
-  --background: #0a0a0f;
+  --background: #07070b;
   --foreground: #f4f4f5;
+  --brand: 139 92 246; /* violet-500 */
+  --brand-2: 217 70 239; /* fuchsia-500 */
+  --brand-3: 34 211 238; /* cyan-400 */
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   color: var(--foreground);
-  background: radial-gradient(ellipse at top, #1a1a2e 0%, #0a0a0f 50%);
+  background: #07070b;
   min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* 全局环境光 — 固定在视口背后的极光底色 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(60% 50% at 15% 0%, rgba(139, 92, 246, 0.18), transparent 60%),
+    radial-gradient(55% 45% at 85% 5%, rgba(217, 70, 239, 0.14), transparent 60%),
+    radial-gradient(70% 60% at 50% 110%, rgba(34, 211, 238, 0.1), transparent 60%),
+    #07070b;
+}
+
+/* 细噪点纹理，增加高级质感 */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* HeroUI 下拉层：避免在表格/卡片布局中被遮挡 */
 [data-slot='popover'],
 [data-slot='content'] {
   z-index: 9999;
+}
+
+/* ─────────────────────────────  工具类  ───────────────────────────── */
+
+.text-gradient {
+  background: linear-gradient(100deg, #c4b5fd 0%, #f0abfc 45%, #67e8f9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-soft {
+  background: linear-gradient(100deg, #ede9fe, #fbcfe8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.glass-strong {
+  background: linear-gradient(180deg, rgba(20, 18, 30, 0.85), rgba(10, 10, 16, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+}
+
+/* 卡片描边渐光（hover 时点亮） */
+.ring-glow {
+  position: relative;
+}
+.ring-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.6), rgba(217, 70, 239, 0.35), rgba(34, 211, 238, 0.4));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.ring-glow:hover::before {
+  opacity: 1;
+}
+
+/* ─────────────────────────────  动画  ───────────────────────────── */
+
+@keyframes aurora-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(4%, -3%, 0) scale(1.08); }
+  66% { transform: translate3d(-3%, 4%, 0) scale(0.96); }
+}
+.animate-aurora { animation: aurora-drift 18s ease-in-out infinite; }
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+.animate-float { animation: float-y 6s ease-in-out infinite; }
+.animate-float-slow { animation: float-y 9s ease-in-out infinite; }
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee { animation: marquee 28s linear infinite; }
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.animate-glow { animation: glow-pulse 4s ease-in-out infinite; }
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow { animation: spin-slow 24s linear infinite; }
+
+/* 滚动提示 */
+@keyframes scroll-cue {
+  0% { transform: translateY(0); opacity: 0; }
+  40% { opacity: 1; }
+  100% { transform: translateY(10px); opacity: 0; }
+}
+.animate-scroll-cue { animation: scroll-cue 1.8s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0a0a10; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.6), rgba(217, 70, 239, 0.5));
+  border-radius: 999px;
+  border: 2px solid #0a0a10;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.9), rgba(217, 70, 239, 0.8));
+}
+
+::selection {
+  background: rgba(217, 70, 239, 0.35);
+  color: #fff;
 }
