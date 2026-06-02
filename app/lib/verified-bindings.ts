@@ -1,6 +1,6 @@
 /** 模型配置页仅收录主 Pipeline 实际使用的绑定（7 LLM Task + 文生图） */
 
-import { SILICONFLOW_VERIFIED_GENERATION_MODELS, SILICONFLOW_VERIFIED_TASK_MODELS, type AiTaskId } from '@/types';
+import { SILICONFLOW_VERIFIED_ALTERNATIVE_MODELS, SILICONFLOW_VERIFIED_GENERATION_MODELS, SILICONFLOW_VERIFIED_TASK_MODELS, type AiTaskId } from '@/types';
 
 export type ConfigBindingGroup = 'task' | 'generation';
 
@@ -99,7 +99,11 @@ export const CONFIG_PAGE_BINDINGS: ConfigPageBinding[] = [
 ];
 
 export function configPageModelIds(): Set<string> {
-  return new Set(CONFIG_PAGE_BINDINGS.map((item) => item.defaultModel));
+  const ids = new Set(CONFIG_PAGE_BINDINGS.map((item) => item.defaultModel));
+  for (const alt of Object.values(SILICONFLOW_VERIFIED_ALTERNATIVE_MODELS)) {
+    ids.add(alt);
+  }
+  return ids;
 }
 
 export function configPageGenerationBindings(): ConfigPageBinding[] {

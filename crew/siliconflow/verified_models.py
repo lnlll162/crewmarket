@@ -149,6 +149,18 @@ OPTIONAL_INTEGRATED_MODELS: dict[str, VerifiedBinding] = {
     ),
 }
 
+# 已实测通过、不作为默认绑定但允许用户在配置页手动切换的备用模型
+VERIFIED_ALTERNATIVE_MODELS: dict[str, VerifiedBinding] = {
+    "chat.reasoning": VerifiedBinding(
+        model_id="ByteDance-Seed/Seed-OSS-36B-Instruct",
+        env_var="",
+        scope="pipeline",
+        verified_by="gate",
+        gate_or_probe="2026-06-01 本地实测 · seo / chat",
+        notes="豆包推理模型；适用于 SEO 优化等需要结构化推理的任务",
+    ),
+}
+
 VERIFIED_PROFILE_ID = "crewmarket-siliconflow-v1"
 VERIFIED_AT = "2026-05-30"
 LLM_DEFAULT_VERIFIED = "deepseek-ai/DeepSeek-V3"
@@ -194,6 +206,7 @@ def verified_model_ids() -> set[str]:
         VERIFIED_GENERATION_MODELS,
         VERIFIED_AUXILIARY_MODELS,
         OPTIONAL_INTEGRATED_MODELS,
+        VERIFIED_ALTERNATIVE_MODELS,
     ):
         for item in group.values():
             ids.add(item.model_id)
@@ -239,6 +252,18 @@ def to_profile_dict() -> dict:
         }
         for key, b in VERIFIED_AUXILIARY_MODELS.items()
     ]
+    alternatives = [
+        {
+            "capability": key,
+            "modelId": b.model_id,
+            "envVar": b.env_var,
+            "scope": b.scope,
+            "verifiedBy": b.verified_by,
+            "gateOrProbe": b.gate_or_probe,
+            "notes": b.notes,
+        }
+        for key, b in VERIFIED_ALTERNATIVE_MODELS.items()
+    ]
     return {
         "profileId": VERIFIED_PROFILE_ID,
         "verifiedAt": VERIFIED_AT,
@@ -248,4 +273,5 @@ def to_profile_dict() -> dict:
         "tasks": tasks,
         "generation": generation,
         "auxiliary": auxiliary,
+        "alternatives": alternatives,
     }

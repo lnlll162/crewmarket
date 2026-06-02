@@ -76,6 +76,10 @@ export const SILICONFLOW_VERIFIED_OPTIONAL_MODELS = {
   stt: 'FunAudioLLM/SenseVoiceSmall',
 } as const;
 
+export const SILICONFLOW_VERIFIED_ALTERNATIVE_MODELS = {
+  'chat.reasoning': 'ByteDance-Seed/Seed-OSS-36B-Instruct',
+} as const;
+
 export interface SiliconFlowModelItem {
   id: string;
   object?: string;
