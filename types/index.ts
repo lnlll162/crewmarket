@@ -97,6 +97,7 @@ export interface ImageGenerationResult {
 
 export interface VideoGenerationResult {
   status: 'pending' | 'submitted' | 'processing' | 'completed' | 'generated' | 'failed';
+  rawStatus?: string;
   prompt?: string;
   model?: string;
   provider?: LlmProviderId;

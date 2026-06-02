@@ -44,19 +44,6 @@ def _post_json(path: str, payload: dict[str, Any]) -> dict[str, Any]:
     return resp.json()
 
 
-def _get_json(path: str, params: dict[str, Any]) -> dict[str, Any]:
-    api_key = _api_key()
-    with httpx.Client(timeout=DEFAULT_TIMEOUT, trust_env=True) as client:
-        resp = client.get(
-            f"{SILICONFLOW_BASE_URL}{path}",
-            headers={"Authorization": f"Bearer {api_key}"},
-            params=params,
-        )
-    if resp.status_code >= 400:
-        raise ValueError(f"硅基流动状态查询失败：{resp.status_code} {resp.text[:500]}")
-    return resp.json()
-
-
 def _image_payload(prompt: str, model: str) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "model": model,
@@ -119,32 +106,67 @@ def _normalize_video_submit_response(data: dict[str, Any]) -> dict[str, Any]:
     return {"status": "submitted", "requestId": request_id.strip(), "provider": "siliconflow"}
 
 
+# 硅基流动 /video/status 返回的状态字符串：Succeed / InQueue / InProgress / Failed
+_VIDEO_SUCCESS_STATES = {"succeed", "succeeded", "success", "completed", "done", "generated", "ready"}
+_VIDEO_FAILURE_STATES = {"failed", "failure", "error", "cancelled", "canceled"}
+
+
+def _canonical_video_status(raw: str) -> str:
+    low = raw.strip().lower()
+    if low in _VIDEO_SUCCESS_STATES:
+        return "completed"
+    if low in _VIDEO_FAILURE_STATES:
+        return "failed"
+    return "processing"
+
+
 def _extract_video_url(data: dict[str, Any]) -> str | None:
     for key in ("video", "url", "outputUrl", "output_url"):
         value = data.get(key)
         if isinstance(value, str) and value.strip():
             return value.strip()
-    result = data.get("result")
-    if isinstance(result, dict):
+    # 实际响应把视频放在 results.videos[].url（复数 results、videos 数组），兼容单数 result
+    for container_key in ("result", "results"):
+        container = data.get(container_key)
+        if not isinstance(container, dict):
+            continue
         for key in ("video", "url", "outputUrl", "output_url"):
-            value = result.get(key)
+            value = container.get(key)
             if isinstance(value, str) and value.strip():
                 return value.strip()
+        videos = container.get("videos")
+        if isinstance(videos, list):
+            for item in videos:
+                if isinstance(item, dict):
+                    value = item.get("url")
+                    if isinstance(value, str) and value.strip():
+                        return value.strip()
     return None
 
 
 def _normalize_video_status_response(data: dict[str, Any], request_id: str) -> dict[str, Any]:
-    status = data.get("status")
-    if not isinstance(status, str) or not status.strip():
-        status = "processing"
-    result: dict[str, Any] = {"status": status.strip(), "requestId": request_id, "provider": "siliconflow", "raw": data}
+    raw_status = data.get("status")
+    if not isinstance(raw_status, str) or not raw_status.strip():
+        raw_status = "processing"
+    results = data.get("results") if isinstance(data.get("results"), dict) else {}
+    result: dict[str, Any] = {
+        "status": _canonical_video_status(raw_status),
+        "rawStatus": raw_status.strip(),
+        "requestId": request_id,
+        "provider": "siliconflow",
+        "raw": data,
+    }
+    if isinstance(data.get("reason"), str) and data.get("reason", "").strip():
+        result["error"] = data["reason"].strip()
     video_url = _extract_video_url(data)
     if video_url:
         result["url"] = video_url
-    if data.get("seed") is not None:
-        result["seed"] = data.get("seed")
-    if data.get("timings") is not None:
-        result["timings"] = data.get("timings")
+    seed = data.get("seed", results.get("seed"))
+    if seed is not None:
+        result["seed"] = seed
+    timings = data.get("timings", results.get("timings"))
+    if timings is not None:
+        result["timings"] = timings
     return result
 
 
@@ -167,7 +189,8 @@ def submit_video(prompt: str, *, model: str | None = None) -> dict[str, Any]:
 
 
 def poll_video_status(request_id: str) -> dict[str, Any]:
-    data = _get_json(SILICONFLOW_VIDEO_STATUS_PATH, {"requestId": request_id})
+    # 硅基流动状态接口是 POST + JSON body（不是 GET 查询参数）
+    data = _post_json(SILICONFLOW_VIDEO_STATUS_PATH, {"requestId": request_id})
     return _normalize_video_status_response(data, request_id)
 
 

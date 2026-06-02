@@ -199,16 +199,23 @@ def _build_generation_payload(content: dict[str, Any], product: dict[str, Any]) 
         }
     try:
         video_generation = submit_video(video_prompt, model=VIDEO_MODEL)
+        video_generation.setdefault("status", "submitted")
+        video_generation.setdefault("message", "视频任务已提交，前端将轮询状态接口获取结果")
         request_id = video_generation.get("requestId")
-        if request_id:
-            deadline = time.perf_counter() + 120
+        # 默认异步：仅提交并立即返回 requestId，由前端轮询 /api/video/status/<requestId>。
+        # 设 AGENT_VIDEO_INLINE=1 可切回同步内联轮询（会阻塞整条 pipeline 直到视频生成完）。
+        inline = (os.getenv("AGENT_VIDEO_INLINE", "0").strip().lower() in ("1", "true", "yes"))
+        if request_id and inline:
+            inline_timeout = float(os.getenv("AGENT_VIDEO_INLINE_TIMEOUT", "300"))
+            poll_interval = float(os.getenv("AGENT_VIDEO_POLL_INTERVAL", "5"))
+            deadline = time.perf_counter() + inline_timeout
             while time.perf_counter() < deadline:
                 status_result = poll_video_status(request_id)
-                vid_status = status_result.get("status", "")
-                if vid_status.lower() in ("succeeded", "ready", "completed", "generated", "failed", "error", "cancelled"):
+                # status 已被 _normalize_video_status_response 归一化为 completed/failed/processing
+                if status_result.get("status") in ("completed", "failed") or status_result.get("url"):
                     video_generation = {**video_generation, **status_result}
                     break
-                time.sleep(5)
+                time.sleep(poll_interval)
     except Exception as exc:
         video_generation = {
             "status": "failed",

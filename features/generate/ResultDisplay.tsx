@@ -17,6 +17,7 @@ import type {
   TelemetryRecord,
 } from '@/types';
 import { PLATFORM_LABELS } from './constants';
+import { VideoResultCard } from './VideoResultCard';
 
 function copyText(text: string) {
   void navigator.clipboard.writeText(text);
@@ -282,36 +283,7 @@ function GenerationStatusCard({
           )}
         </div>
       )}
-      {label === '视频生成' && data.url && (
-        <div className="mt-3 space-y-3">
-          <div className="overflow-hidden rounded-[18px] border border-cyan-400/14 bg-black/30">
-            <video
-              src={data.url}
-              controls
-              className="h-auto w-full max-h-[420px]"
-              poster={undefined}
-            >
-              <track kind="captions" />
-            </video>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="flat" color="secondary" onPress={() => copyLink(data.url!)} className="border border-cyan-400/18 bg-white/5 text-cyan-100">
-              复制链接
-            </Button>
-            <Button size="sm" variant="flat" as="a" href={data.url} target="_blank" rel="noreferrer" className="border border-cyan-400/18 bg-white/5 text-cyan-100">
-              打开视频
-            </Button>
-          </div>
-        </div>
-      )}
-      {label === '视频生成' && !data.url && (
-        <div className="mt-3 rounded-[18px] border border-cyan-400/14 bg-cyan-500/8 p-3">
-          <p className="text-sm text-cyan-200/80">
-            {data.status === 'submitted' ? '已提交生成任务，等待处理…' : data.status === 'processing' ? '正在生成中…' : '暂无视频链接'}
-          </p>
-        </div>
-      )}
-      {data.url && label !== '图片生成' && label !== '视频生成' && (
+      {data.url && label !== '图片生成' && (
         <a
           href={data.url}
           target="_blank"
@@ -381,7 +353,7 @@ export function ContentResultView({ data }: { data: ContentGenerateResult }) {
       }
     >
       <GenerationStatusCard label="图片生成" data={data.imageGeneration} />
-      <GenerationStatusCard label="视频生成" data={data.videoGeneration} />
+      <VideoResultCard data={data.videoGeneration} />
       <div className="rounded-[22px] border border-violet-400/14 bg-gradient-to-r from-violet-500/16 to-fuchsia-500/10 p-4 shadow-[0_14px_36px_rgba(0,0,0,0.16)] ring-1 ring-violet-400/10">
         <p className="mb-1 text-xs text-violet-300">内容总标题</p>
         <p className="break-words text-lg font-semibold text-white">{data.title}</p>
