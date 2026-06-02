@@ -201,6 +201,19 @@ export interface MergeRequest {
   social: SocialGenerateResult;
 }
 
+export interface ModuleRequestBase {
+  product?: ProductExtractResult;
+  market?: MarketResearchResult;
+  content?: ContentGenerateResult;
+  seo?: SeoOptimizeResult;
+  social?: SocialGenerateResult;
+  sellingPoints?: string[];
+  options?: ProductInputOptions;
+  category?: string;
+  keywordsHint?: string[];
+  platformRequirements?: string[];
+}
+
 /** POST /api/pipeline/run — 前端主入口 */
 export interface PipelineRunRequest extends ProductInput {}
 
