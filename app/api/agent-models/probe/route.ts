@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const message =
       mode === 'live'
         ? report.ok
-          ? `8 项绑定 live 探针全部通过 (${report.live?.passedBindings}/${report.live?.totalBindings})`
+          ? `全部绑定 live 探针通过 (${report.live?.passedBindings}/${report.live?.totalBindings})`
           : '部分绑定 live 探针失败'
         : report.offline?.skipped
           ? '无本地配置文件，当前使用默认/环境变量'

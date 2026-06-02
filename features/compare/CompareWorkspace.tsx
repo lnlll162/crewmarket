@@ -147,7 +147,7 @@ export function CompareWorkspace() {
                 ...baseline.effective.tasks,
                 [taskId]: { model: modelId, provider: 'siliconflow' as LlmProviderId },
               },
-              generation: { image: baseline.effective.generation?.image ?? '' },
+              generation: { image: baseline.effective.generation?.image ?? '', video: baseline.effective.generation?.video ?? '' },
             }),
           });
 

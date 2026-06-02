@@ -10,7 +10,7 @@ export default async function ModelsPage() {
         <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-violet-300">模型控制台</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight text-white">任务模型配置</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-          管理主 Pipeline 使用的 LLM 任务与文生图模型，保存后应用于后续一键生成。
+          管理主 Pipeline 使用的 LLM 任务、文生图与文生视频模型，保存后应用于后续一键生成。
         </p>
       </section>
       <ModelConfigWorkspace initialConfig={initialConfig} />

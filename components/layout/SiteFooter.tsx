@@ -39,7 +39,7 @@ export function SiteFooter() {
               </span>
             </div>
             <p className="max-w-sm text-sm leading-relaxed text-zinc-500">
-              基于 CrewAI 的多智能体电商营销全链路生成系统 —— 从产品图与描述，到市场策略、营销内容、物料扩展与结果整合的一站式生成。
+              基于 CrewAI 的多智能体电商营销全链路生成系统 —— 从产品图与描述，到市场策略、营销内容、物料扩展、视频生成与结果整合的一站式生成。
             </p>
             <a
               href="https://github.com/lnlll162/crewmarket"

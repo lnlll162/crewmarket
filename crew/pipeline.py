@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import uuid
 from datetime import datetime, timezone
 from time import perf_counter
@@ -16,7 +17,7 @@ from agents import (
     social_media_agent,
 )
 from config import SILICONFLOW_IMAGE_MODEL, SILICONFLOW_VIDEO_MODEL
-from generation import generate_image
+from generation import generate_image, submit_video, poll_video_status
 from prompts import (
     content_write_prompt,
     market_research_prompt,
@@ -162,17 +163,30 @@ def _build_generation_payload(content: dict[str, Any], product: dict[str, Any]) 
     image_ideas = content.get("imageIdeas") or []
     video_material = content.get("videoMaterial") or {"hook": "", "scenes": [], "voiceover": "", "caption": ""}
     poster_copy = content.get("posterCopy") or {}
+    product_name = (product.get("productName") or {}).get("value", "")
+    selling_points = (product.get("sellingPoints") or {}).get("value", [])
+    attributes = (product.get("attributes") or {}).get("value", [])
     image_prompt = "\n".join([
         f"产品：{product.get('summary', '')}",
         f"标题：{content.get('title', '')}",
         f"海报：{poster_copy.get('headline', '')} / {poster_copy.get('subheadline', '')}",
         f"创意：{json.dumps(image_ideas, ensure_ascii=False)}",
     ]).strip()
-    video_prompt = "\n".join([
-        f"产品：{product.get('summary', '')}",
-        f"脚本：{content.get('videoScript', '')}",
-        f"素材：{json.dumps(video_material, ensure_ascii=False)}",
-    ]).strip()
+    video_prompt_parts = [
+        f"5秒产品展示视频：{product_name}。",
+        f"产品描述：{product.get('summary', '')}",
+    ]
+    if selling_points:
+        video_prompt_parts.append(f"核心卖点：{'，'.join(selling_points[:3])}")
+    if attributes:
+        video_prompt_parts.append(f"产品特征：{'，'.join(attributes[:5])}")
+    video_script = content.get("videoScript", "")
+    if video_script:
+        video_prompt_parts.append(f"分镜脚本：{video_script}")
+    hook = video_material.get("hook", "")
+    if hook:
+        video_prompt_parts.append(f"开场钩子：{hook}")
+    video_prompt = "，".join(video_prompt_parts)
     try:
         image_generation = generate_image(image_prompt, model=IMAGE_MODEL)
     except Exception as exc:
@@ -183,13 +197,27 @@ def _build_generation_payload(content: dict[str, Any], product: dict[str, Any]) 
             "model": IMAGE_MODEL,
             "error": str(exc),
         }
-    return image_generation, {
-        "status": "disabled",
-        "prompt": video_prompt,
-        "provider": "siliconflow",
-        "model": VIDEO_MODEL,
-        "message": "视频能力已从主流程移除，作为独立模块保留",
-    }
+    try:
+        video_generation = submit_video(video_prompt, model=VIDEO_MODEL)
+        request_id = video_generation.get("requestId")
+        if request_id:
+            deadline = time.perf_counter() + 120
+            while time.perf_counter() < deadline:
+                status_result = poll_video_status(request_id)
+                vid_status = status_result.get("status", "")
+                if vid_status.lower() in ("succeeded", "ready", "completed", "generated", "failed", "error", "cancelled"):
+                    video_generation = {**video_generation, **status_result}
+                    break
+                time.sleep(5)
+    except Exception as exc:
+        video_generation = {
+            "status": "failed",
+            "prompt": video_prompt,
+            "provider": "siliconflow",
+            "model": VIDEO_MODEL,
+            "error": str(exc),
+        }
+    return image_generation, video_generation
 
 
 def _programmatic_consistency_notes(

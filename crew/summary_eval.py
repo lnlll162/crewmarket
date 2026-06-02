@@ -123,6 +123,15 @@ def fallback_pipeline_summary(
                 "score": 7 if run.get("status") == "success" else 4,
             }
         )
+    if not role_evaluation:
+        role_evaluation.append(
+            {
+                "roleId": "pipeline",
+                "roleName": "Pipeline 执行引擎",
+                "evaluation": f"Pipeline 未成功执行任何步骤{f'：{error_message}' if error_message else ''}",
+                "score": 1,
+            }
+        )
 
     success_rate = (
         (pipe.get("successCount") or 0) / len(telemetry) if telemetry else 0.0

@@ -6,7 +6,7 @@ import { SiteFooter } from '@/components/layout/SiteFooter';
 
 export const metadata: Metadata = {
   title: 'CrewMarket — 多智能体电商营销内容生成',
-  description: '基于 CrewAI 多智能体的电商营销内容一站式生成：从产品图到市场策略、营销文案、物料扩展与结果整合。',
+  description: '基于 CrewAI 多智能体的电商营销内容一站式生成：从产品图到市场策略、营销文案、物料扩展、视频生成与结果整合。',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

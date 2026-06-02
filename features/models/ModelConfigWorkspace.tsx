@@ -19,7 +19,7 @@ type DraftTasks = Record<AiTaskId, { model: string; provider: LlmProviderId }>;
 
 interface DraftConfig {
   tasks: DraftTasks;
-  generation: { image: string };
+  generation: { image: string; video: string };
 }
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -71,6 +71,7 @@ function draftFromConfig(data: AgentModelConfigResponse): DraftConfig {
     ) as DraftTasks,
     generation: {
       image: data.effective.generation?.image ?? '',
+      video: data.effective.generation?.video ?? '',
     },
   };
 }
@@ -207,7 +208,8 @@ export function ModelConfigWorkspace({ initialConfig }: { initialConfig?: AgentM
   const dirty = useMemo(() => {
     if (!config || !draft) return false;
     const taskDirty = AI_TASK_ORDER.some((id) => draft.tasks[id].model !== config.effective.tasks[id]?.model);
-    const genDirty = draft.generation.image !== (config.effective.generation?.image ?? '');
+    const genDirty = draft.generation.image !== (config.effective.generation?.image ?? '')
+      || draft.generation.video !== (config.effective.generation?.video ?? '');
     return taskDirty || genDirty;
   }, [config, draft]);
 
@@ -219,7 +221,7 @@ export function ModelConfigWorkspace({ initialConfig }: { initialConfig?: AgentM
     try {
       const body: SaveAgentModelConfigRequest = {
         tasks: draft.tasks,
-        generation: draft.generation,
+        generation: { image: draft.generation.image, video: draft.generation.video },
       };
       const result = await fetchJson<{ snapshot: AgentModelConfigResponse }>('/api/agent-models/config', {
         method: 'PUT',
@@ -264,7 +266,7 @@ export function ModelConfigWorkspace({ initialConfig }: { initialConfig?: AgentM
       });
       setProbeReport(report);
       if (report.ok) {
-        setMessage(mode === 'live' ? '8 项绑定 live 探针全部通过' : '配置文件与环境变量一致');
+        setMessage(mode === 'live' ? '9 项绑定 live 探针全部通过' : '配置文件与环境变量一致');
       } else {
         setError(mode === 'live' ? '部分绑定 live 探针失败，请查看下方结果' : '配置文件未正确注入环境变量');
       }
@@ -286,6 +288,7 @@ export function ModelConfigWorkspace({ initialConfig }: { initialConfig?: AgentM
       ) as DraftTasks,
       generation: {
         image: config.defaults.generation?.image ?? '',
+        video: config.defaults.generation?.video ?? '',
       },
     });
     setMessage('已填入默认白名单，点击「保存配置」后写入文件');
@@ -348,9 +351,9 @@ export function ModelConfigWorkspace({ initialConfig }: { initialConfig?: AgentM
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-violet-200/90">主 Pipeline 模型</p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">任务与文生图配置</h2>
+            <h2 className="mt-2 text-2xl font-semibold text-white">任务与生成能力配置</h2>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-400">
-              仅包含首页一键 Pipeline 实际使用的 {bindingCount} 项绑定（7 个 LLM Task + 文生图）。
+              仅包含首页一键 Pipeline 实际使用的 {bindingCount} 项绑定（7 个 LLM Task + 文生图 + 文生视频）。
               保存后写入 <code className="text-violet-200">{config.configPath}</code>，下次运行 Pipeline 生效。
             </p>
           </div>
@@ -417,9 +420,18 @@ export function ModelConfigWorkspace({ initialConfig }: { initialConfig?: AgentM
 
       <section className="space-y-4 overflow-visible">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-violet-200/80">文生图（1）</h3>
-        {config.capabilityRows.map((row) =>
+        {config.capabilityRows.filter((r) => r.bindingId === 'generation.image').map((row) =>
           renderCapability(row, draft.generation.image, (model) =>
-            setDraft((prev) => (prev ? { ...prev, generation: { image: model } } : prev)),
+            setDraft((prev) => (prev ? { ...prev, generation: { ...prev.generation, image: model } } : prev)),
+          ),
+        )}
+      </section>
+
+      <section className="space-y-4 overflow-visible">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-violet-200/80">文生视频（1）</h3>
+        {config.capabilityRows.filter((r) => r.bindingId === 'generation.video').map((row) =>
+          renderCapability(row, draft.generation.video, (model) =>
+            setDraft((prev) => (prev ? { ...prev, generation: { ...prev.generation, video: model } } : prev)),
           ),
         )}
       </section>

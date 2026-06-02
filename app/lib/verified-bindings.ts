@@ -1,4 +1,4 @@
-/** 模型配置页仅收录主 Pipeline 实际使用的绑定（7 LLM Task + 文生图） */
+/** 模型配置页仅收录主 Pipeline 实际使用的绑定（7 LLM Task + 文生图 + 文生视频） */
 
 import { SILICONFLOW_VERIFIED_ALTERNATIVE_MODELS, SILICONFLOW_VERIFIED_GENERATION_MODELS, SILICONFLOW_VERIFIED_TASK_MODELS, type AiTaskId } from '@/types';
 
@@ -95,6 +95,15 @@ export const CONFIG_PAGE_BINDINGS: ConfigPageBinding[] = [
     capabilityId: 'image',
     envVar: 'AGENT_IMAGE_MODEL',
     defaultModel: SILICONFLOW_VERIFIED_GENERATION_MODELS.image,
+  },
+  {
+    bindingId: 'generation.video',
+    group: 'generation',
+    label: '文生视频',
+    description: '5秒产品展示视频生成',
+    capabilityId: 'video',
+    envVar: 'AGENT_VIDEO_MODEL',
+    defaultModel: SILICONFLOW_VERIFIED_GENERATION_MODELS.video,
   },
 ];
 

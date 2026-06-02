@@ -5,9 +5,9 @@ export interface AgentModelTaskBinding {
   provider: LlmProviderId;
 }
 
-/** 主 Pipeline 仅使用文生图 */
 export interface AgentModelGenerationBinding {
   image?: string;
+  video?: string;
 }
 
 export interface AgentModelConfigDocument {

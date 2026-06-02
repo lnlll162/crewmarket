@@ -86,8 +86,8 @@ function readEnvCapability(binding: ConfigPageBinding): string | undefined {
   return process.env[binding.envVar]?.trim() || undefined;
 }
 
-function getGenerationImage(doc: AgentModelConfigDocument): string | undefined {
-  return doc.generation?.image?.trim();
+function getGenerationModel(doc: AgentModelConfigDocument, key: 'image' | 'video'): string | undefined {
+  return doc.generation?.[key]?.trim();
 }
 
 export function buildDefaultConfigDocument(): AgentModelConfigDocument {
@@ -103,7 +103,7 @@ export function buildDefaultConfigDocument(): AgentModelConfigDocument {
     updatedAt: new Date().toISOString(),
     provider: 'siliconflow',
     tasks,
-    generation: { image: SILICONFLOW_VERIFIED_GENERATION_MODELS.image },
+    generation: { image: SILICONFLOW_VERIFIED_GENERATION_MODELS.image, video: SILICONFLOW_VERIFIED_GENERATION_MODELS.video },
   };
 }
 
@@ -126,12 +126,14 @@ function mergeEffectiveConfig(saved: AgentModelConfigDocument | null): AgentMode
     }
   }
 
-  const imageBinding = configPageGenerationBindings()[0];
-  const savedImage = getGenerationImage(saved ?? {});
-  const envImage = imageBinding ? readEnvCapability(imageBinding) : undefined;
-  const generation: AgentModelGenerationBinding = {
-    image: savedImage || envImage || defaults.generation?.image,
-  };
+  const generationBindings = configPageGenerationBindings();
+  const generation: AgentModelGenerationBinding = {};
+  for (const binding of generationBindings) {
+    const key = binding.bindingId === 'generation.image' ? 'image' as const : 'video' as const;
+    const savedModel = getGenerationModel(saved ?? {}, key);
+    const envModel = readEnvCapability(binding);
+    generation[key] = savedModel || envModel || defaults.generation?.[key];
+  }
 
   return {
     version: 1,
@@ -152,7 +154,8 @@ function resolveCapabilitySource(
   binding: ConfigPageBinding,
   saved: AgentModelConfigDocument | null,
 ): AgentModelCapabilityRow['source'] {
-  if (binding.bindingId === 'generation.image' && getGenerationImage(saved ?? {})) return 'saved';
+  const key = binding.bindingId === 'generation.image' ? 'image' as const : 'video' as const;
+  if (getGenerationModel(saved ?? {}, key)) return 'saved';
   if (readEnvCapability(binding)) return 'env';
   return 'default';
 }
@@ -215,7 +218,8 @@ export async function getAgentModelConfigResponse(): Promise<AgentModelConfigRes
   });
 
   const capabilityRows: AgentModelCapabilityRow[] = configPageGenerationBindings().map((binding) => {
-    const currentModel = getGenerationImage(effective) ?? binding.defaultModel;
+    const key = binding.bindingId === 'generation.image' ? 'image' as const : 'video' as const;
+    const currentModel = getGenerationModel(effective, key) ?? binding.defaultModel;
     const source = resolveCapabilitySource(binding, saved);
     return {
       bindingId: binding.bindingId,
@@ -253,6 +257,7 @@ export async function saveAgentModelConfig(body: SaveAgentModelConfigRequest): P
 
   const generation = body.generation ?? {};
   if (generation.image) assertVerifiedModel(generation.image, '文生图', allowed);
+  if (generation.video) assertVerifiedModel(generation.video, '文生视频', allowed);
 
   const doc: AgentModelConfigDocument = {
     version: 1,
@@ -264,7 +269,10 @@ export async function saveAgentModelConfig(body: SaveAgentModelConfigRequest): P
         { model: body.tasks[taskId].model.trim(), provider: body.tasks[taskId].provider || 'siliconflow' },
       ]),
     ) as Record<AiTaskId, AgentModelTaskBinding>,
-    generation: generation.image ? { image: generation.image.trim() } : undefined,
+    generation: {
+      image: (generation.image || SILICONFLOW_VERIFIED_GENERATION_MODELS.image).trim(),
+      video: (generation.video || SILICONFLOW_VERIFIED_GENERATION_MODELS.video).trim(),
+    },
   };
 
   await writeSavedConfig(doc);

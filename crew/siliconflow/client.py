@@ -33,7 +33,7 @@ def auth_headers(*, json_content: bool = True) -> dict[str, str]:
 
 
 def get_json(path: str, *, params: dict[str, Any] | None = None) -> dict[str, Any]:
-    with httpx.Client(timeout=DEFAULT_TIMEOUT) as client:
+    with httpx.Client(timeout=DEFAULT_TIMEOUT, trust_env=True) as client:
         resp = client.get(
             f"{base_url()}{path}",
             headers=auth_headers(json_content=False),
@@ -46,7 +46,7 @@ def get_json(path: str, *, params: dict[str, Any] | None = None) -> dict[str, An
 
 
 def post_json(path: str, payload: dict[str, Any]) -> dict[str, Any]:
-    with httpx.Client(timeout=DEFAULT_TIMEOUT) as client:
+    with httpx.Client(timeout=DEFAULT_TIMEOUT, trust_env=True) as client:
         resp = client.post(
             f"{base_url()}{path}",
             headers=auth_headers(),

@@ -23,7 +23,7 @@ export const PIPELINE_STEPS: PipelineStepMeta[] = [
   {
     id: 'content',
     label: '内容生成',
-    description: '生成标题、卖点、详情页、脚本与海报文案',
+    description: '生成标题、卖点、详情页、脚本、海报文案、图片创意与视频素材',
     agent: 'Marketing Content Writer',
   },
   {

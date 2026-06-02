@@ -408,7 +408,7 @@ export function GenerateWorkspace() {
                     <Tab key="pipeline" title="流程字段">
                       <div className="space-y-3 rounded-[20px] bg-black/20 p-4 text-sm text-zinc-300 ring-1 ring-inset ring-white/5">
                         <p>上方输入字段：产品描述、产品名称、品类、图片</p>
-                        <p>实际生成字段：产品提取、市场分析、内容文案、SEO、社媒、汇总</p>
+                        <p>实际生成字段：产品提取、市场分析、内容文案、SEO、社媒、汇总、文生图、文生视频</p>
                         <p className="text-zinc-500">说明：输入字段是触发条件，生成字段是模型输出结果，两者本来就不一样。</p>
                       </div>
                     </Tab>

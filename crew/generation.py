@@ -33,7 +33,7 @@ def _api_key() -> str:
 
 def _post_json(path: str, payload: dict[str, Any]) -> dict[str, Any]:
     api_key = _api_key()
-    with httpx.Client(timeout=DEFAULT_TIMEOUT) as client:
+    with httpx.Client(timeout=DEFAULT_TIMEOUT, trust_env=True) as client:
         resp = client.post(
             f"{SILICONFLOW_BASE_URL}{path}",
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
@@ -46,7 +46,7 @@ def _post_json(path: str, payload: dict[str, Any]) -> dict[str, Any]:
 
 def _get_json(path: str, params: dict[str, Any]) -> dict[str, Any]:
     api_key = _api_key()
-    with httpx.Client(timeout=DEFAULT_TIMEOUT) as client:
+    with httpx.Client(timeout=DEFAULT_TIMEOUT, trust_env=True) as client:
         resp = client.get(
             f"{SILICONFLOW_BASE_URL}{path}",
             headers={"Authorization": f"Bearer {api_key}"},

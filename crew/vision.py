@@ -89,7 +89,7 @@ def _call_vision_api(
     }
 
     timeout = httpx.Timeout(connect=60.0, read=600.0, write=60.0, pool=60.0)
-    with httpx.Client(timeout=timeout) as client:
+    with httpx.Client(timeout=timeout, trust_env=True) as client:
         try:
             resp = client.post(
                 f"{SILICONFLOW_BASE_URL}/chat/completions",
