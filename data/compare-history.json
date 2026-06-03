@@ -1,0 +1,32 @@
+[
+  {
+    "id": "compare-1780479712335",
+    "createdAt": "2026-06-03T09:41:52.633Z",
+    "taskIds": [
+      "task.content_write"
+    ],
+    "candidateModels": [
+      "Qwen/Qwen3-VL-32B-Instruct",
+      "deepseek-ai/DeepSeek-V3"
+    ],
+    "status": "completed",
+    "pipelineId": "pipeline-1780479712566-7j53vj3",
+    "totalTokens": 0,
+    "durationMs": 0
+  },
+  {
+    "id": "compare-1780479200767",
+    "createdAt": "2026-06-03T09:33:21.192Z",
+    "taskIds": [
+      "task.content_write"
+    ],
+    "candidateModels": [
+      "Qwen/Qwen3-VL-32B-Instruct",
+      "deepseek-ai/DeepSeek-V3"
+    ],
+    "status": "completed",
+    "pipelineId": "pipeline-1780479201122-rz1ux80",
+    "totalTokens": 0,
+    "durationMs": 0
+  }
+]

@@ -124,14 +124,14 @@ export function AgentShowcase() {
           className="relative flex flex-col justify-between overflow-hidden rounded-[24px] border border-violet-400/20 bg-[linear-gradient(135deg,rgba(168,85,247,0.16),rgba(236,72,153,0.1))] p-6 backdrop-blur-xl"
         >
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-200/90">统一输出</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-200/90">最终交付</p>
             <h3 className="mt-3 font-display text-2xl font-bold leading-snug text-white">
-              结构统一的
+              从一张产品图
               <br />
-              营销方案
+              到全链路爆款内容
             </h3>
             <p className="mt-3 text-sm leading-relaxed text-zinc-300/90">
-              所有结果以 <code className="rounded bg-black/30 px-1.5 py-0.5 text-violet-200">{'{ code, message, data }'}</code> 统一收口，便于前后端联调与商品上架。
+              五个智能体串联完成洞察、策略、文案、物料与渠道适配，一次生成可直接用于详情页、社媒和视频脚本的整套营销资产。
             </p>
           </div>
           <Link
