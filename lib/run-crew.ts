@@ -50,6 +50,12 @@ export async function runCrewPipeline(
           }
         }
         if (!jsonLine) {
+          const jsonMatch = stdout.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            jsonLine = jsonMatch[0];
+          }
+        }
+        if (!jsonLine) {
           throw new Error('stdout 中未找到有效 JSON');
         }
         resolve(JSON.parse(jsonLine));

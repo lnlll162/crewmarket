@@ -67,6 +67,14 @@ function parseJsonOutput(stdout: string) {
       }
     }
   }
+  const jsonMatch = stdout.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[0]) as PythonPipelineEnvelope;
+    } catch {
+      throw new Error('stdout 中未找到有效 JSON');
+    }
+  }
   throw new Error('stdout 中未找到有效 JSON');
 }
 
