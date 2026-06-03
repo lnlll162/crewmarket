@@ -3,6 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Card, CardBody, Chip, Select, SelectItem, Spinner, Textarea } from '@heroui/react';
 import { ErrorState } from '@/components/ui/ErrorState';
+import {
+  MODEL_SELECT_CLASS_NAMES,
+  MODEL_SELECT_LISTBOX_CLASS_NAME,
+  MODEL_SELECT_POPOVER_PROPS,
+} from '@/components/ui/modelSelectStyles';
 import type { ApiResponse, AiTaskId, LlmProviderId, PipelineRunRequest, PipelineRunResponseData, PipelineSummaryOutput } from '@/types';
 import type { AgentModelConfigResponse } from '@/types/agent-model-config';
 import type { SiliconFlowCatalog, SiliconFlowModelItem } from '@/types/siliconflow';
@@ -258,11 +263,13 @@ export function CompareWorkspace() {
                 selectionMode="multiple"
                 selectedKeys={selectedModels}
                 onSelectionChange={(keys) => setSelectedModels(Array.from(keys).map(String))}
-                listboxProps={{ className: 'max-h-60 overflow-y-auto' }}
+                popoverProps={MODEL_SELECT_POPOVER_PROPS}
+                classNames={MODEL_SELECT_CLASS_NAMES}
+                listboxProps={{ className: MODEL_SELECT_LISTBOX_CLASS_NAME }}
               >
                 {modelOptions.map((item) => (
                   <SelectItem key={item.id} textValue={item.id} className="text-zinc-100">
-                    {item.id}
+                    <span className="block truncate text-sm">{item.id}</span>
                   </SelectItem>
                 ))}
               </Select>

@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Chip, Select, SelectItem, Spinner } from '@heroui/react';
 import { ErrorState } from '@/components/ui/ErrorState';
+import {
+  MODEL_SELECT_CLASS_NAMES,
+  MODEL_SELECT_LISTBOX_CLASS_NAME,
+  MODEL_SELECT_POPOVER_PROPS,
+} from '@/components/ui/modelSelectStyles';
 import type { ApiResponse } from '@/types';
 import type {
   AgentModelCapabilityRow,
@@ -28,24 +33,6 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   if (json.code !== 0 || json.data == null) throw new Error(json.message || '请求失败');
   return json.data;
 }
-
-const SELECT_POPOVER_PROPS = {
-  placement: 'bottom' as const,
-  offset: 10,
-  shouldBlockScroll: true,
-  classNames: {
-    content:
-      'z-[9999] max-h-72 overflow-hidden border border-violet-400/20 bg-[#12121a] p-1 shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop-blur-xl',
-  },
-};
-
-const SELECT_CLASS_NAMES = {
-  trigger:
-    'group min-h-11 border border-white/10 bg-white/[0.04] data-[hover=true]:bg-white/[0.07]',
-  value: 'text-sm text-zinc-100 truncate pl-6',
-  innerWrapper: 'max-w-full overflow-hidden',
-  selectorIcon: 'absolute left-2 top-1/2 -translate-y-1/2 flex-shrink-0 text-zinc-400 transition-transform duration-200 ease-in-out -rotate-90 group-data-[open=true]:rotate-0',
-};
 
 function verifiedOptions(catalog: SiliconFlowCatalog | null, capabilityId: string, fallback: string): SiliconFlowModelItem[] {
   const list = catalog?.capabilities[capabilityId]?.models?.filter((item) => item.verified) ?? [];
@@ -145,9 +132,9 @@ function BindingCard({
             const model = Array.from(keys)[0];
             if (model) onChange(String(model));
           }}
-          popoverProps={SELECT_POPOVER_PROPS}
-          classNames={SELECT_CLASS_NAMES}
-          listboxProps={{ className: 'max-h-60 overflow-y-auto' }}
+          popoverProps={MODEL_SELECT_POPOVER_PROPS}
+          classNames={MODEL_SELECT_CLASS_NAMES}
+          listboxProps={{ className: MODEL_SELECT_LISTBOX_CLASS_NAME }}
           selectorIcon={
             <svg
               width="16"
