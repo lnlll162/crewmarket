@@ -40,9 +40,11 @@ const SELECT_POPOVER_PROPS = {
 };
 
 const SELECT_CLASS_NAMES = {
-  trigger: 'min-h-11 border border-white/10 bg-white/[0.04] data-[hover=true]:bg-white/[0.07]',
-  value: 'text-sm text-zinc-100',
-  label: 'text-zinc-400',
+  trigger:
+    'group min-h-11 border border-white/10 bg-white/[0.04] data-[hover=true]:bg-white/[0.07]',
+  value: 'text-sm text-zinc-100 truncate pl-6',
+  innerWrapper: 'max-w-full overflow-hidden',
+  selectorIcon: 'absolute left-2 top-1/2 -translate-y-1/2 flex-shrink-0 text-zinc-400 transition-transform duration-200 ease-in-out -rotate-90 group-data-[open=true]:rotate-0',
 };
 
 function verifiedOptions(catalog: SiliconFlowCatalog | null, capabilityId: string, fallback: string): SiliconFlowModelItem[] {
@@ -136,8 +138,6 @@ function BindingCard({
           <p className="text-xs text-zinc-500">{envVar}</p>
         </div>
         <Select
-          label="选择模型"
-          labelPlacement="outside"
           aria-label={`${title} 模型`}
           selectedKeys={[selected]}
           isDisabled={disabled}
@@ -146,8 +146,25 @@ function BindingCard({
             if (model) onChange(String(model));
           }}
           popoverProps={SELECT_POPOVER_PROPS}
-          classNames={{ ...SELECT_CLASS_NAMES, base: 'space-y-2' }}
+          classNames={SELECT_CLASS_NAMES}
           listboxProps={{ className: 'max-h-60 overflow-y-auto' }}
+          selectorIcon={
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 6L8 10L12 6"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          }
         >
           {options.map((item) => (
             <SelectItem key={item.id} textValue={item.id} className="text-zinc-100">
