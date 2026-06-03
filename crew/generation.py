@@ -49,7 +49,7 @@ def _image_payload(prompt: str, model: str) -> dict[str, Any]:
         "model": model,
         "prompt": prompt,
         "image_size": os.getenv("AGENT_IMAGE_SIZE", "1024x1024"),
-        "batch_size": int(os.getenv("AGENT_IMAGE_BATCH_SIZE", "1")),
+        "batch_size": int(os.getenv("AGENT_IMAGE_BATCH_SIZE", "3")),
         "num_inference_steps": int(os.getenv("AGENT_IMAGE_STEPS", "20")),
         "guidance_scale": float(os.getenv("AGENT_IMAGE_GUIDANCE_SCALE", "7.5")),
     }

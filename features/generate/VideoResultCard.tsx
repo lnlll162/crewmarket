@@ -92,11 +92,10 @@ export function VideoResultCard({ data }: { data?: VideoGenerationResult }) {
               variant="flat"
               as="a"
               href={v.url}
-              target="_blank"
-              rel="noreferrer"
+              download
               className="border border-cyan-400/18 bg-white/5 text-cyan-100"
             >
-              打开视频
+              下载视频
             </Button>
           </div>
         </div>

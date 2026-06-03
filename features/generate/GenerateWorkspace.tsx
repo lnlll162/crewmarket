@@ -396,17 +396,23 @@ export function GenerateWorkspace() {
                 </div>
                 <div id="pipeline-result-print-area" className="mt-6 space-y-4">
                   <Tabs
+                    className="w-full"
                     aria-label="生成结果分类"
                     color="secondary"
-                    variant="underlined"
+                    variant="solid"
                     selectedKey={activeTab}
                     onSelectionChange={(key) => setActiveTab(String(key))}
                     classNames={{
-                      tabList: 'flex-wrap gap-2',
-                      panel: 'mt-4',
-                      cursor: 'bg-violet-500',
-                      tabContent: 'group-data-[selected=true]:text-violet-100 group-data-[hover=true]:text-white transition-colors',
-                      tab: 'transition-transform duration-200 hover:-translate-y-0.5',
+                      base: 'w-full',
+                      tabList:
+                        'grid w-full grid-cols-2 gap-3 rounded-[26px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_18px_40px_rgba(0,0,0,0.18)] sm:grid-cols-3 lg:grid-cols-6',
+                      panel: 'mt-6',
+                      cursor:
+                        'rounded-[18px] border border-violet-300/20 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.28),rgba(168,85,247,0.26)_45%,rgba(59,130,246,0.18)_100%)] shadow-[0_10px_28px_rgba(168,85,247,0.28)]',
+                      tabContent:
+                        'w-full text-center text-[13px] font-medium tracking-[0.02em] text-zinc-400 group-data-[selected=true]:text-white group-data-[hover=true]:text-zinc-100 transition-colors',
+                      tab:
+                        'h-14 w-full justify-center rounded-[18px] border border-white/6 bg-white/[0.025] px-4 transition-all duration-300 data-[hover-unselected=true]:-translate-y-0.5 data-[hover-unselected=true]:border-violet-300/15 data-[hover-unselected=true]:bg-white/[0.055]',
                     }}
                   >
                     <Tab key="summary" title="总览">
@@ -469,13 +475,6 @@ export function GenerateWorkspace() {
                         <SocialResultView data={steps.social} />
                       ) : (
                         <EmptyState />
-                      )}
-                    </Tab>
-                    <Tab key="merge" title={visibleSteps.merged ? '汇总' : '汇总 · 等待'}>
-                      {steps.merged ? (
-                        <MergeResultView data={steps.merged} />
-                      ) : (
-                        <EmptyState message="汇总结果不可用" />
                       )}
                     </Tab>
                   </Tabs>
