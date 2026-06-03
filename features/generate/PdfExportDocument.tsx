@@ -67,6 +67,33 @@ function getImagePreviewUrls(data?: ContentGenerateResult) {
   return Array.from(new Set(urls));
 }
 
+function resolveModuleMetrics(item: ModuleResultEnvelope, telemetry?: TelemetryRecord[]) {
+  let matchedTelemetry: TelemetryRecord | undefined;
+
+  for (let index = (telemetry?.length ?? 0) - 1; index >= 0; index -= 1) {
+    const record = telemetry?.[index];
+    if (!record) continue;
+    if (record.moduleId === item.moduleId && record.roleId === item.roleId) {
+      matchedTelemetry = record;
+      break;
+    }
+    if (!matchedTelemetry && (record.moduleId === item.moduleId || record.roleId === item.roleId)) {
+      matchedTelemetry = record;
+    }
+  }
+
+  const inputTokens = item.inputTokens ?? matchedTelemetry?.inputTokens;
+  const outputTokens = item.outputTokens ?? matchedTelemetry?.outputTokens;
+
+  return {
+    durationMs: item.durationMs ?? matchedTelemetry?.durationMs,
+    totalTokens:
+      item.totalTokens ??
+      matchedTelemetry?.totalTokens ??
+      (inputTokens != null || outputTokens != null ? (inputTokens ?? 0) + (outputTokens ?? 0) : undefined),
+  };
+}
+
 function resolveExportReportHeading(report: PdfReportDocument, productName?: string) {
   const normalizedName = productName?.trim();
   const shouldReplaceTitle =
@@ -219,7 +246,7 @@ export function PdfExportDocument({
 
       <div className="mt-8 space-y-8">
         {pkg?.product ? (
-          <PdfSection title="产品提取结果" description="保留结构化产品识别字段，便于直接用于后续营销内容和报告复盘。">
+          <PdfSection title="产品提取结果" description="梳理产品核心识别字段（名称、品类、属性、卖点），支撑后续营销内容生成与复盘追溯。">
             <div className="grid gap-4 sm:grid-cols-2">
               <PdfInfoCard label="产品名称" value={pkg.product.productName.value || '—'} />
               <PdfInfoCard label="品类识别" value={pkg.product.category.value || '—'} />
@@ -252,7 +279,7 @@ export function PdfExportDocument({
         ) : null}
 
         {pkg?.content ? (
-          <PdfSection title="内容生成结果" description="按正式报告样式输出主标题、卖点文案、图像结果与视频素材建议。">
+          <PdfSection title="内容生成结果" description="集中展示生成的标题、卖点文案、详情页内容及图片与视频素材建议。">
             <PdfInfoCard label="内容总标题" value={pkg.content.title || '—'} />
             <div>
               <p className="text-sm font-semibold text-zinc-900">卖点文案</p>
@@ -324,7 +351,7 @@ export function PdfExportDocument({
         ) : null}
 
         {pkg?.seo ? (
-          <PdfSection title="SEO 优化结果" description="保留关键词、优化标题和渠道适配文案，便于落地投放与搜索承接。">
+          <PdfSection title="SEO 优化结果" description="涵盖关键词、优化标题与各渠道适配文案，匹配搜索投放与流量承接需求。">
             <PdfInfoCard label="关键词" value={<PdfBulletList items={pkg.seo.keywords ?? []} />} />
             <PdfInfoCard label="优化标题" value={pkg.seo.optimizedTitle || '—'} muted />
             <PdfInfoCard label="搜索友好文案" value={pkg.seo.searchFriendlyCopy || '—'} muted />
@@ -337,7 +364,7 @@ export function PdfExportDocument({
         ) : null}
 
         {pkg?.social ? (
-          <PdfSection title="社媒适配结果" description="保留各平台成稿与标签，方便直接投放或二次编辑。">
+          <PdfSection title="社媒适配结果" description="输出各平台适配成稿与话题标签，开箱即用或按需二次编辑。">
             <div className="space-y-4">
               {pkg.social.copies.map((copy, index) => (
                 <div key={`${copy.platform}-${index}`} className="rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-4">
@@ -355,7 +382,7 @@ export function PdfExportDocument({
           </PdfSection>
         ) : null}
 
-        <PdfSection title="运行统计与过程记录" description="将运行统计快照、模块过程记录与关键执行元数据统一附在报告后段。">
+        <PdfSection title="运行统计与过程记录" description="记录本次生成的各项运行指标，包含耗时、Token 消耗、各模块执行详情与角色调用日志。">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <PdfInfoCard label="总耗时" value={formatMs(totals.durationMs)} />
             <PdfInfoCard label="总 Token" value={formatTokens(totals.totalTokens)} muted />
@@ -370,29 +397,32 @@ export function PdfExportDocument({
             <div>
               <p className="text-sm font-semibold text-zinc-900">模块过程记录</p>
               <div className="mt-3 space-y-3">
-                {modules.map((item, index) => (
-                  <div key={`${item.moduleId}-${item.startedAt ?? index}`} className="rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-zinc-900">{MODULE_LABELS[item.moduleId] ?? item.moduleName}</p>
-                        <p className="mt-1 text-xs uppercase tracking-wide text-zinc-500">
-                          {item.roleName} · {item.roleId}
-                          {item.promptVersion ? ` · ${item.promptVersion}` : ''}
-                        </p>
+                {modules.map((item, index) => {
+                  const metrics = resolveModuleMetrics(item, telemetry);
+                  return (
+                    <div key={`${item.moduleId}-${item.startedAt ?? index}`} className="rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-zinc-900">{MODULE_LABELS[item.moduleId] ?? item.moduleName}</p>
+                          <p className="mt-1 text-xs uppercase tracking-wide text-zinc-500">
+                            {item.roleName} · {item.roleId}
+                            {item.promptVersion ? ` · ${item.promptVersion}` : ''}
+                          </p>
+                        </div>
+                        <div className="text-right text-xs leading-6 text-zinc-500">
+                          <p>状态：{item.status}</p>
+                          <p>耗时：{formatMs(metrics.durationMs)}</p>
+                          <p>Token：{formatTokens(metrics.totalTokens)}</p>
+                        </div>
                       </div>
-                      <div className="text-right text-xs leading-6 text-zinc-500">
-                        <p>状态：{item.status}</p>
-                        <p>耗时：{formatMs(item.durationMs)}</p>
-                        <p>Token：{formatTokens(item.totalTokens)}</p>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        <PdfInfoCard label="输入摘要" value={item.inputSummary || '—'} muted />
+                        <PdfInfoCard label="输出摘要" value={item.outputSummary || '—'} muted />
                       </div>
+                      {item.errorMessage ? <p className="mt-3 text-sm leading-7 text-rose-600">错误：{item.errorMessage}</p> : null}
                     </div>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <PdfInfoCard label="输入摘要" value={item.inputSummary || '—'} muted />
-                      <PdfInfoCard label="输出摘要" value={item.outputSummary || '—'} muted />
-                    </div>
-                    {item.errorMessage ? <p className="mt-3 text-sm leading-7 text-rose-600">错误：{item.errorMessage}</p> : null}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : null}
@@ -428,7 +458,7 @@ export function PdfExportDocument({
           ) : null}
         </PdfSection>
 
-        <PdfSection title="评估报告附录" description="将评估摘要、风险机会判断与专业报告章节附在报告尾部，保持统一版式输出。">
+        <PdfSection title="评估报告" description="呈现评估摘要、风险与机会判断及报告补充章节，供快速了解整体分析结论。">
           {summary?.executiveSummary ? (
             <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Executive Summary</p>
