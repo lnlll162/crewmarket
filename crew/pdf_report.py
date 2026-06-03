@@ -202,6 +202,8 @@ def fallback_pdf_report(
             "telemetrySnapshot": {
                 "totalDurationMs": pipe.get("totalDurationMs") or perf.get("totalDurationMs"),
                 "totalTokens": pipe.get("totalTokens") or perf.get("totalTokens"),
+                "totalInputTokens": pipe.get("totalInputTokens") or perf.get("totalInputTokens"),
+                "totalOutputTokens": pipe.get("totalOutputTokens") or perf.get("totalOutputTokens"),
                 "successRate": float(success_rate) if success_rate is not None else None,
                 "summaryText": perf_text[:200],
             },

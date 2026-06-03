@@ -540,7 +540,7 @@ def validate_pdf_report(data: Any) -> dict[str, Any]:
     if not isinstance(telemetry_raw, dict):
         raise SchemaValidationError("telemetrySnapshot 必须为对象")
     telemetry_snapshot: dict[str, Any] = {}
-    for key in ("totalDurationMs", "totalTokens"):
+    for key in ("totalDurationMs", "totalTokens", "totalInputTokens", "totalOutputTokens"):
         if telemetry_raw.get(key) is not None:
             try:
                 telemetry_snapshot[key] = int(telemetry_raw[key])

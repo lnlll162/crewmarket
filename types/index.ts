@@ -359,6 +359,8 @@ export interface PdfReportDocument {
   sections: PdfReportSection[];
   telemetrySnapshot?: {
     totalDurationMs?: number;
+    totalInputTokens?: number;
+    totalOutputTokens?: number;
     totalTokens?: number;
     successRate?: number;
     summaryText?: string;

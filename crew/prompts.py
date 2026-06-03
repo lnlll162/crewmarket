@@ -543,6 +543,8 @@ PDF_REPORT_SCHEMA = """
   ],
   "telemetrySnapshot": {
     "totalDurationMs": 0,
+    "totalInputTokens": 0,
+    "totalOutputTokens": 0,
     "totalTokens": 0,
     "successRate": 0.95,
     "summaryText": "80-150 字运行统计摘要"
