@@ -1,6 +1,7 @@
 import { spawn } from 'child_process';
 import path from 'path';
 import type { PipelineRunRequest, PipelineRunResponseData, PipelineStepId, TelemetryRecord } from '@/types';
+import { savePipelineResult, savePipelineStatus } from '@/app/lib/pipeline-store';
 
 function projectRoot() {
   return process.cwd();
@@ -136,4 +137,74 @@ export function validateProductInput(body: unknown): body is PipelineRunRequest 
 
 export async function runCrewPipeline(body: PipelineRunRequest, step: 'full' | 'content' | 'analyze' | 'seo' | 'social' | 'merge') {
   return runPythonPipeline(step, body);
+}
+
+/**
+ * 异步执行 pipeline：spawn Python 子进程，完成后将结果持久化到文件系统。
+ * 不阻塞调用方 —— 调用方拿到 pipelineId 即可立即返回给前端。
+ */
+export function runCrewPipelineAsync(
+  pipelineId: string,
+  body: PipelineRunRequest,
+  step: string,
+): void {
+  const script = path.join(projectRoot(), 'crew', 'run_pipeline.py');
+  const python = pythonExecutable();
+  const startedAt = Date.now();
+
+  const child = spawn(python, [script, '--step', step], {
+    cwd: projectRoot(),
+    stdio: ['pipe', 'pipe', 'pipe'],
+    env: {
+      ...process.env,
+      PYTHONUTF8: '1',
+      PYTHONIOENCODING: 'utf-8',
+    },
+  });
+
+  let stdout = '';
+  let stderr = '';
+
+  child.stdout.on('data', (chunk) => {
+    stdout += chunk.toString();
+  });
+  child.stderr.on('data', (chunk) => {
+    stderr += chunk.toString();
+  });
+
+  child.on('close', async (code) => {
+    const finishedAt = Date.now();
+
+    if (code !== 0) {
+      const errorMsg = stderr || `Python exited with code ${code}`;
+      await savePipelineStatus(pipelineId, 'failed', { error: errorMsg });
+      return;
+    }
+
+    try {
+      const parsed = parseJsonOutput(stdout);
+      const mapped = mapPipelineEnvelope(parsed);
+      if (mapped.telemetry?.length) {
+        mapped.telemetry = mapped.telemetry.map((item) => ({
+          ...item,
+          durationMs: item.durationMs ?? Math.max(0, finishedAt - startedAt),
+        }));
+      }
+      mapped.pipelineId = mapped.pipelineId || pipelineId;
+      await savePipelineResult(pipelineId, mapped);
+      await savePipelineStatus(pipelineId, 'completed', {
+        stepsCompleted: Object.keys(mapped.steps ?? {}),
+      });
+    } catch (err) {
+      const errorMsg = `Python 输出解析失败: ${(err as Error).message}\n${stdout.slice(-500)}\n${stderr.slice(-500)}`;
+      await savePipelineStatus(pipelineId, 'failed', { error: errorMsg });
+    }
+  });
+
+  child.on('error', async (err) => {
+    await savePipelineStatus(pipelineId, 'failed', { error: err.message });
+  });
+
+  child.stdin.write(JSON.stringify(body));
+  child.stdin.end();
 }

@@ -49,3 +49,4 @@ venv/
 
 # Local runtime overrides
 data/agent-model-config.json
+data/pipeline-results/

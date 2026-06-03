@@ -50,7 +50,35 @@ export function GenerateWorkspace() {
   ]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { loading, error, stepStatus, currentStep, steps, result, run } = usePipelineRun();
+  const { loading, error, stepStatus, currentStep, steps, result, run, recovering, recoveredInput } = usePipelineRun();
+
+  // 恢复产品输入信息（仅首次，不覆盖用户编辑）
+  const inputRestoredRef = useRef(false);
+  useEffect(() => {
+    if (!recoveredInput || inputRestoredRef.current) return;
+    inputRestoredRef.current = true;
+
+    if (recoveredInput.description) setDescription(recoveredInput.description);
+    if (recoveredInput.options?.productName) setProductName(recoveredInput.options.productName);
+    if (recoveredInput.options?.category) setCategory(recoveredInput.options.category);
+    if (recoveredInput.options?.targetAudience) setAudience(recoveredInput.options.targetAudience);
+    if (recoveredInput.options?.brandStyle) setBrandStyle(recoveredInput.options.brandStyle);
+    if (recoveredInput.options?.priceRange) setPriceRange(recoveredInput.options.priceRange);
+    if (recoveredInput.options?.competitorInfo) setCompetitorInfo(recoveredInput.options.competitorInfo);
+    if (recoveredInput.options?.marketingGoal) setMarketingGoal(recoveredInput.options.marketingGoal);
+
+    // 恢复文本资产
+    if (recoveredInput.assets?.length) {
+      setTextAssets((prev) =>
+        prev.map((asset) => {
+          const matched = recoveredInput.assets!.find(
+            (a) => a.id === asset.id && a.type === 'text',
+          );
+          return matched ? { ...asset, content: matched.content ?? '' } : asset;
+        }),
+      );
+    }
+  }, [recoveredInput, setDescription, setProductName, setCategory, setAudience, setBrandStyle, setPriceRange, setCompetitorInfo, setMarketingGoal]);
 
   const onImageChange = async (assetId: string, file: File) => {
     const objectUrl = URL.createObjectURL(file);
@@ -344,7 +372,7 @@ export function GenerateWorkspace() {
               />
             )}
 
-            {!showProgress && !error && <PipelineOverview />}
+            {!showProgress && !error && !recovering && <PipelineOverview />}
           </div>
         </section>
 
@@ -466,7 +494,7 @@ export function GenerateWorkspace() {
             </motion.div>
           )}
 
-          {!loading && !error && !hasPartialResults && (
+          {!loading && !error && !hasPartialResults && !recovering && (
             <EmptyState message="" />
           )}
         </AnimatePresence>
