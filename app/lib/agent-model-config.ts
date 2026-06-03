@@ -130,7 +130,7 @@ function mergeEffectiveConfig(saved: AgentModelConfigDocument | null): AgentMode
   const generation: AgentModelGenerationBinding = {};
   for (const binding of generationBindings) {
     const key = binding.bindingId === 'generation.image' ? 'image' as const : 'video' as const;
-    const savedModel = getGenerationModel(saved ?? {}, key);
+    const savedModel = saved ? getGenerationModel(saved, key) : undefined;
     const envModel = readEnvCapability(binding);
     generation[key] = savedModel || envModel || defaults.generation?.[key];
   }
@@ -155,7 +155,7 @@ function resolveCapabilitySource(
   saved: AgentModelConfigDocument | null,
 ): AgentModelCapabilityRow['source'] {
   const key = binding.bindingId === 'generation.image' ? 'image' as const : 'video' as const;
-  if (getGenerationModel(saved ?? {}, key)) return 'saved';
+  if (saved && getGenerationModel(saved, key)) return 'saved';
   if (readEnvCapability(binding)) return 'env';
   return 'default';
 }

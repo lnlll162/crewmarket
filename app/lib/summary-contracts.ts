@@ -15,7 +15,6 @@ export const SUMMARY_OUTPUT_CONTRACT: Array<keyof PipelineSummaryOutput> = [
   'riskAssessment',
   'opportunityAnalysis',
   'recommendations',
-  'visualAnalysis',
   'pdfHighlights',
   'confidence',
   'missingInfo',

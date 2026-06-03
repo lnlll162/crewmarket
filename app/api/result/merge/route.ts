@@ -11,8 +11,8 @@ export async function POST(request: Request) {
       return jsonResponse(fail(API_CODES.PARAM_ERROR), 400);
     }
 
-    const result = await runCrewPipeline(body as never, 'merge');
-    const data = result.data as MergeResult;
+    const result = (await runCrewPipeline(body as never, 'merge')) as { data: MergeResult };
+    const data = result.data;
     return jsonResponse(success(data, '结果汇总成功'));
   } catch (err) {
     const message = err instanceof Error ? err.message : 'AI 服务异常';

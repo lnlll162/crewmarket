@@ -10,8 +10,8 @@ export async function POST(request: Request) {
       return jsonResponse(fail(API_CODES.PARAM_ERROR), 400);
     }
 
-    const result = await runCrewPipeline(body as never, 'content');
-    const data = result.data as ContentGenerateResult;
+    const result = (await runCrewPipeline(body as never, 'content')) as { data: ContentGenerateResult };
+    const data = result.data;
     return jsonResponse(success(data, '文案生成成功'));
   } catch (err) {
     const message = err instanceof Error ? err.message : 'AI 服务异常';

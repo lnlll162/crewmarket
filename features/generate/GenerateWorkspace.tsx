@@ -20,6 +20,7 @@ import {
   TelemetrySummaryView,
   PdfReportView,
 } from './ResultDisplay';
+import { PdfExportDocument } from './PdfExportDocument';
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -28,6 +29,66 @@ function fileToBase64(file: File): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+async function waitForRenderableAssets(container: HTMLElement) {
+  const images = Array.from(container.querySelectorAll('img'));
+  await Promise.all(
+    images.map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          if (img.complete) {
+            resolve();
+            return;
+          }
+          const done = () => resolve();
+          img.addEventListener('load', done, { once: true });
+          img.addEventListener('error', done, { once: true });
+        }),
+    ),
+  );
+  if ('fonts' in document) {
+    await (document as Document & { fonts?: { ready?: Promise<void> } }).fonts?.ready;
+  }
+  await new Promise((resolve) => window.setTimeout(resolve, 120));
+}
+
+async function downloadElementAsPdf(source: HTMLElement, fileName: string) {
+  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
+  await waitForRenderableAssets(source);
+
+  const canvas = await html2canvas(source, {
+    scale: Math.min(window.devicePixelRatio || 2, 2),
+    useCORS: true,
+    backgroundColor: '#ffffff',
+    logging: false,
+    imageTimeout: 15000,
+  });
+
+  const imageData = canvas.toDataURL('image/png');
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const margin = 10;
+  const pageWidth = 210 - margin * 2;
+  const pageHeight = 297 - margin * 2;
+  const imageHeight = (canvas.height * pageWidth) / canvas.width;
+  let heightLeft = imageHeight;
+
+  pdf.addImage(imageData, 'PNG', margin, margin, pageWidth, imageHeight, undefined, 'FAST');
+  heightLeft -= pageHeight;
+
+  while (heightLeft > 0) {
+    const position = heightLeft - imageHeight + margin;
+    pdf.addPage();
+    pdf.addImage(imageData, 'PNG', margin, position, pageWidth, imageHeight, undefined, 'FAST');
+    heightLeft -= pageHeight;
+  }
+
+  pdf.save(fileName);
+}
+
+function buildPdfFileName(pipelineId?: string) {
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+  return `CrewMarket-${pipelineId || 'report'}-${stamp}.pdf`;
 }
 
 export function GenerateWorkspace() {
@@ -49,6 +110,7 @@ export function GenerateWorkspace() {
     { id: 'image-2', label: '参考图', preview: null },
   ]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   const { loading, error, stepStatus, currentStep, steps, result, run, recovering, recoveredInput } = usePipelineRun();
 
@@ -145,51 +207,23 @@ export function GenerateWorkspace() {
     run,
   ]);
 
-  const handleExportPdf = useCallback(() => {
-    const pdfArea = document.getElementById('pdf-report-print-area');
-    const fallbackArea = document.getElementById('pipeline-result-print-area');
-    const source = pdfArea ?? fallbackArea;
-    if (!source) return;
+  const handleExportPdf = useCallback(async () => {
+    const source = document.getElementById('pdf-export-render-area');
+    if (!source || !result?.pdfReport || !steps.merged) return;
 
-    const popup = window.open('', '_blank', 'noopener,noreferrer,width=1400,height=1000');
-    if (!popup) return;
-
-    const cloned = source.cloneNode(true) as HTMLElement;
-    cloned.classList.add('print-root');
-    const isPdfReport = Boolean(pdfArea);
-
-    popup.document.documentElement.innerHTML = `
-      <head>
-        <title>CrewMarket ${isPdfReport ? '评估报告' : '结果导出'}</title>
-        <meta charset="utf-8" />
-        <style>
-          :root { color-scheme: ${isPdfReport ? 'light' : 'dark'}; }
-          body {
-            margin: 0;
-            background: ${isPdfReport ? '#f4f4f5' : '#09090f'};
-            color: ${isPdfReport ? '#18181b' : '#f4f4f5'};
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          }
-          .print-root {
-            padding: ${isPdfReport ? '24px' : '32px'};
-            background: ${isPdfReport ? '#ffffff' : 'linear-gradient(180deg, rgba(24,24,27,1) 0%, rgba(9,9,15,1) 100%)'};
-            max-width: ${isPdfReport ? '210mm' : 'none'};
-            margin: ${isPdfReport ? '0 auto' : '0'};
-          }
-          .print-root * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .print-root img { max-width: 100%; page-break-inside: avoid; }
-          .print-root section, .print-root header, .print-root footer { page-break-inside: avoid; }
-          @page { size: A4; margin: 16mm; }
-        </style>
-      </head>
-      <body></body>
-    `;
-    popup.document.body.appendChild(cloned);
-    popup.focus();
-    setTimeout(() => popup.print(), 300);
-  }, []);
+    try {
+      setExportingPdf(true);
+      await downloadElementAsPdf(source, buildPdfFileName(result.pipelineId));
+    } catch (err) {
+      console.error('PDF 导出失败', err);
+      window.alert('PDF 导出失败，请稍后重试。');
+    } finally {
+      setExportingPdf(false);
+    }
+  }, [result, steps.merged]);
 
   const showProgress = loading || result != null;
+  const canExportPdf = Boolean(result?.pdfReport && steps.merged && !loading);
   const hasPartialResults = Object.keys(steps).length > 0;
   const [activeTab, setActiveTab] = useState('summary');
   const [visibleSteps, setVisibleSteps] = useState<Partial<Record<PipelineStepId, boolean>>>({});
@@ -358,8 +392,15 @@ export function GenerateWorkspace() {
               <h3 className="mt-2 text-2xl font-semibold text-white">生成进度</h3>
             </div>
             {showProgress && (
-              <Button size="sm" variant="flat" color="secondary" onPress={handleExportPdf} className="border border-violet-400/18 bg-white/5 text-violet-100 transition hover:border-violet-300/35 hover:bg-violet-500/15 hover:text-white">
-                导出 PDF
+              <Button
+                size="sm"
+                variant="flat"
+                color="secondary"
+                onPress={handleExportPdf}
+                isDisabled={!canExportPdf || exportingPdf}
+                className="border border-violet-400/18 bg-white/5 text-violet-100 transition hover:border-violet-300/35 hover:bg-violet-500/15 hover:text-white"
+              >
+                {exportingPdf ? '导出中…' : '导出 PDF'}
               </Button>
             )}
           </div>
@@ -498,6 +539,18 @@ export function GenerateWorkspace() {
           )}
         </AnimatePresence>
       </div>
+      {result?.pdfReport && steps.merged ? (
+        <div aria-hidden className="fixed left-[-10000px] top-0 z-[-1] w-[210mm] bg-white">
+          <PdfExportDocument
+            report={result.pdfReport}
+            merged={steps.merged}
+            summary={result.summary}
+            modules={result.modules}
+            telemetry={result.telemetry}
+            fallbackProductName={productName || recoveredInput?.options?.productName}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
