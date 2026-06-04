@@ -2,7 +2,7 @@
 
 > 本文档区分 **业务 REST API**（前端调用）与 **AI 执行层**（CrewAI / 大模型调用）。
 
-**版本：** v0.3 · **最后更新：** 2026-05-25
+**版本：** v0.4 · **最后更新：** 2026-06-03
 
 ---
 
@@ -10,37 +10,62 @@
 
 ```
 前端
-  │  HTTP（6 个业务 REST API）
+  │  HTTP（pipeline 主流程 + 分步 / 辅助 REST API）
   ▼
 Next.js Route Handlers（业务层）
-  │  内部调用
+  │  spawn PYTHON_EXECUTABLE 调用 CrewAI
   ▼
-CrewAI 工作流（AI 执行层，6 个核心模块）
-  │  每个模块可绑定不同 LLM（按 Agent 选型）
+CrewAI 工作流（AI 执行层，7 个 AI Task + 文生图 / 文生视频）
+  │  每个 Task 可绑定不同 LLM（按 Agent 选型）
   ▼
-大模型 API（外部，可跨 Provider，按 Task 配置）
+大模型 API（硅基流动，按 Task 配置不同模型）
 ```
 
 | 层级 | 数量 | 谁调用 | 说明 |
 |------|------|--------|------|
-| **业务 REST API** | **6** | 前端 | 用户可见，统一 `{ code, message, data }` |
-| **AI Task（Agent 步骤）** | **6 核心模块** | 后端内部 | 每模块 1 个 Agent + 1 次或多次 LLM 调用 |
-| **外部大模型 API** | **≥1 Provider** | CrewAI | **不同 Task 可使用不同模型/厂商**（与老师演示一致） |
+| **业务 REST API** | **pipeline 主流程 + 5 分步 + 辅助** | 前端 | 用户可见，统一 `{ code, message, data }` |
+| **AI Task（Agent 步骤）** | **7 个 Task** | 后端内部 | 每 Task 1 个 Agent + 1 次或多次 LLM 调用；文案后追加文生图 / 文生视频 |
+| **外部大模型 API** | **硅基流动单 Provider** | CrewAI | **不同 Task 绑定不同硅基流动模型** |
 
 ---
 
-## 一、业务 REST API（6 个）
+## 一、业务 REST API
 
-当前系统的**首页主流程**采用分步串行调用，便于展示进度、定位失败和支持单步重跑；`/api/pipeline/run` 保留为后端一键编排接口，可用于调试、服务端编排或未来异步任务模式。
+当前系统的**首页主流程**采用 `POST /api/pipeline/run` 一键编排：提交后立即返回 `pipelineId`，后端异步串行执行完整 AI 流程并持久化结果，前端轮询 `GET /api/pipeline/status/{pipelineId}` 获取分步进度与最终结果，切换页面后通过 `GET /api/pipeline/latest` 恢复。分步业务接口（product/analyze、content/generate、seo/optimize、social/generate、result/merge）仍保留，供调试与单步重跑使用。
+
+### 主流程接口（前端实际调用）
 
 | # | 方法 | 路径 | 用途 | 前端场景 |
 |---|------|------|------|----------|
-| 1 | POST | `/api/product/analyze` | 产品信息提取 + 市场分析 | 首页主流程第 1 步 |
-| 2 | POST | `/api/content/generate` | 营销内容与物料生成（标题、详情页、海报、图片、视频） | 首页主流程第 2 步 |
-| 3 | POST | `/api/seo/optimize` | 搜索优化与渠道适配 | 首页主流程第 3 步 |
-| 4 | POST | `/api/social/generate` | 社媒适配文案与脚本建议 | 首页主流程第 4 步 |
-| 5 | POST | `/api/result/merge` | 汇总协调输出 | 首页主流程第 5 步 |
-| 6 | POST | `/api/pipeline/run` | 后端一键编排：串行执行完整 AI 流程 | 调试 / 服务端编排 / 未来异步任务入口 |
+| 1 | POST | `/api/pipeline/run` | 一键编排：异步串行执行完整 AI 流程，返回 `pipelineId` | 首页主入口 |
+| 2 | GET | `/api/pipeline/status/{pipelineId}` | 轮询流水线分步进度与结果 | 生成中轮询 |
+| 3 | GET | `/api/pipeline/latest` | 恢复最近一次生成状态 | 页面切换后恢复 |
+| 4 | GET | `/api/pipeline/result/{pipelineId}` | 读取指定流水线完整结果 | 历史 / 对比 |
+| 5 | GET | `/api/video/status/{requestId}` | 轮询异步视频生成状态 | 视频物料生成 |
+
+### 分步业务接口（调试 / 单步重跑，非主路径）
+
+| # | 方法 | 路径 | 用途 |
+|---|------|------|------|
+| 1 | POST | `/api/product/analyze` | 产品信息提取 + 市场分析 |
+| 2 | POST | `/api/content/generate` | 营销内容与物料生成（标题、详情页、海报文案、图片创意、视频脚本/素材） |
+| 3 | POST | `/api/seo/optimize` | 搜索优化与渠道适配 |
+| 4 | POST | `/api/social/generate` | 社媒适配文案与脚本建议 |
+| 5 | POST | `/api/result/merge` | 汇总协调输出 |
+
+### 模型配置与辅助能力接口
+
+| 方法 | 路径 | 用途 |
+|------|------|------|
+| GET / PUT / DELETE | `/api/agent-models/config` | 读取 / 更新 / 重置各 AI Task 的硅基流动模型绑定 |
+| POST | `/api/agent-models/probe` | 对指定模型发起实测探活 |
+| GET | `/api/siliconflow/models` | 模型目录（默认白名单，`?mode=account` 取账号全量） |
+| POST | `/api/siliconflow/embeddings` | 文本向量 Embedding |
+| POST | `/api/siliconflow/rerank` | 重排序 Rerank |
+| POST | `/api/siliconflow/speech` | 语音合成 TTS（可选，未入主链路） |
+| POST | `/api/siliconflow/stt` | 语音识别 STT（可选，未入主链路） |
+| GET / POST | `/api/compare/history` | 读取 / 追加生成结果对比历史 |
+| GET | `/api/image-proxy` | 图片代理（跨域预览 / PDF 导出） |
 
 ### 统一返回结构
 
@@ -56,7 +81,7 @@ CrewAI 工作流（AI 执行层，6 个核心模块）
 
 ---
 
-## 二、AI 执行层（6 个核心模块）
+## 二、AI 执行层（7 个 AI Task）
 
 与系统任务顺序一致，**每个核心模块对应 1 个或多个 Agent 调用**（图片输入时第 1 步可能额外走 Vision）。
 
@@ -166,7 +191,7 @@ POST /api/pipeline/run
 | 汇总评估 | `task.result_merge` | `deepseek-ai/DeepSeek-V3` | Gate F live |
 | PDF 报告 | `task.pdf_report` | `deepseek-ai/DeepSeek-V3` | Gate G smoke |
 | 文生图 | Pipeline 物料 | `baidu/ERNIE-Image-Turbo` | 项目历史默认 |
-| 文生视频 | `/api/video/jobs` | `Wan-AI/Wan2.2-T2V-A14B` | 账号唯一 T2V |
+| 文生视频 | `/api/video/status/{requestId}`（异步轮询） | `Wan-AI/Wan2.2-T2V-A14B` | 账号唯一 T2V |
 | Embedding | 辅助 API | `BAAI/bge-m3` | `POST /api/siliconflow/embeddings` |
 | Rerank | 辅助 API | `BAAI/bge-reranker-v2-m3` | `POST /api/siliconflow/rerank` |
 | TTS（可选） | 可选 REST | `fnlp/MOSS-TTSD-v0.5` | `POST /api/siliconflow/speech` |
@@ -335,10 +360,13 @@ market_agent  = Agent(..., llm=get_llm("task.market_research"))
 
 ### 响应 `data` 结构（摘要）
 
+`POST /api/pipeline/run` 提交后返回 `pipelineId` 与初始 `status`；完整结果通过 `GET /api/pipeline/status/{pipelineId}` 轮询获得，结构与 `PipelineRunResponseData` 一致：
+
 ```json
 {
-  "pipelineId": "pl_abc123",
+  "pipelineId": "pipeline-1780497313816-mzjzrq5",
   "status": "completed",
+  "currentStep": "merged",
   "steps": {
     "productExtract": {},
     "marketResearch": {},
@@ -349,11 +377,16 @@ market_agent  = Agent(..., llm=get_llm("task.market_research"))
   },
   "result": {},
   "pendingConfirmations": [],
-  "generatedAt": "2026-05-25T12:00:00.000Z"
+  "generatedAt": "2026-06-03T12:00:00.000Z",
+  "telemetry": [],
+  "modules": [],
+  "summary": {},
+  "pdfReport": {},
+  "error": null
 }
 ```
 
-完整字段见 [types 定义](../../types/index.ts)。
+> `status` 取值：`pending` / `processing` / `completed` / `failed`。`content.imageGeneration` 与 `content.videoGeneration` 承载文生图 / 文生视频结果；视频默认异步，初始为 `submitted` 并附 `requestId`，前端轮询 `GET /api/video/status/{requestId}` 直到 `completed`。完整字段见 [types 定义](../../types/index.ts) 中的 `PipelineRunResponseData`。
 
 ### 分步接口返回字段对照
 
@@ -377,7 +410,7 @@ market_agent  = Agent(..., llm=get_llm("task.market_research"))
 
 ## 五、联调约定
 
-- 前端主流程：**仅调用** `POST /api/pipeline/run`
-- 后端实现：Route Handler 内调用 CrewAI 工作流，按 Task 1→6 串行执行
-- Mock 阶段：可在业务层返回固定 JSON，AI 层尚未接入时不影响前端开发
-- 分步 API（2–6）供调试、单步重跑，**生产主路径不强制前端调用**
+- 前端主流程：`POST /api/pipeline/run` 提交 → 轮询 `GET /api/pipeline/status/{pipelineId}` → 必要时 `GET /api/pipeline/latest` 恢复。
+- 后端实现：Route Handler 通过 `PYTHON_EXECUTABLE` spawn `crew/` 下的 CrewAI 工作流，按 Task 1→7 串行执行（含 PDF 报告），并把分步结果与状态持久化到 `data/pipeline-results/`。
+- 视频物料：pipeline 默认异步提交视频任务，立即返回 `requestId`；前端通过 `GET /api/video/status/{requestId}` 轮询，`AGENT_VIDEO_INLINE=1` 可切回同步内联。
+- 分步 API（product/analyze、content/generate、seo/optimize、social/generate、result/merge）供调试、单步重跑，**生产主路径不强制前端调用**。

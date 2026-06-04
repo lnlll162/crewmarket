@@ -1,300 +1,119 @@
-# CrewMarket 项目现状与升级总方案
+# CrewMarket 项目现状总览
 
-> 记录当前项目真实结构、已实现能力、已确认问题，以及后续统一升级方案。
->
-> 本文档用于统一产品定位、后端任务边界、前端展示口径与后续演进方向。
+> 记录项目当前真实结构、已交付能力与关键约定，统一产品定位、后端任务边界与前端展示口径。
 
-**版本：** v0.2  
-**最后更新：** 2026-05-26
+**版本：** v0.3
+**最后更新：** 2026-06-03
 
 ---
 
-## 1. 项目当前定位
+## 1. 项目定位
 
-### 当前定位
-CrewMarket 当前是一个 **多智能体电商营销内容生成系统**，以“产品理解 → 市场分析 → 营销内容 → SEO → 社媒 → 汇总”为主链路。
+CrewMarket 是一个 **多智能体电商营销内容生成系统**，主链路为：
 
-### 当前已明确的范围
-- 支持产品图片与文字描述输入
-- 支持产品识图
-- 支持结构化营销内容生成
-- 支持 SEO 与社媒文案生成
-- 支持结果汇总与一致性校验
-- 前端采用分步串行调用，不默认依赖 `/api/pipeline/run`
-- 后端以硅基流动为唯一模型供应方，通过不同任务绑定不同模型
-- 当前结果展示已按模块拆分为：产品、市场、内容、SEO、社媒、汇总
+> 产品理解 → 市场与品牌策略 → 营销内容与物料 → SEO → 社媒 → 汇总 → PDF 报告
 
-### 当前不应误解的范围
-- 现阶段**不是**“已完成真实生图 + 真实视频生成”的系统
-- `posterCopy`、`imageIdeas`、`videoScript`、`videoMaterial` 目前属于内容生成/创意输出的一部分
-- 这些字段**不是**独立的图片生成或视频生成任务链路
+在文案物料链路之后，系统进一步调用 **文生图** 与 **文生视频** 产出真实营销素材。
+
+### 已交付范围
+- 产品图片 / 文字描述输入，支持产品识图（Vision）
+- 结构化营销内容生成（标题、卖点、详情页、转化描述、海报文案、视频脚本、视频素材、图片创意）
+- SEO 优化与多平台渠道适配
+- 小红书 / 微博 / 抖音社媒文案与脚本建议
+- 汇总协调与一致性校验
+- **真实文生图**（`baidu/ERNIE-Image-Turbo`）生成营销海报图片
+- **真实文生视频**（`Wan-AI/Wan2.2-T2V-A14B`，默认异步：提交返回 `requestId`，前端轮询）
+- PDF 专业报告生成与前端导出
+- 按 AI Task 切换硅基流动模型（`/models` 配置页 + 实测探活）
+- 流水线结果持久化、页面切换后恢复、生成历史对比
+
+### 前端运行方式
+首页主流程调用 `POST /api/pipeline/run`（异步一键编排），轮询 `GET /api/pipeline/status/{pipelineId}` 获取进度与结果，必要时用 `GET /api/pipeline/latest` 恢复。分步业务接口仅作调试 / 单步重跑入口，不是主路径。
 
 ---
 
 ## 2. 当前项目结构
 
-### 2.1 前端结构
+### 2.1 前端（Next.js 13.5 App Router）
 
-- `features/generate/GenerateWorkspace.tsx` — 首页生成工作台
-- `features/generate/usePipelineRun.ts` — 前端分步串行调用编排
-- `features/generate/PipelineProgress.tsx` — 流程进度展示
-- `features/generate/ResultDisplay.tsx` — 结果展示区
-- `features/generate/constants.ts` — 流程步骤元数据
-- `components/ui/EmptyState.tsx` — 空状态
-- `components/ui/ErrorState.tsx` — 错误状态
+页面：`/`（营销首页）、`/generate`（生成工作台）、`/models`（模型配置）、`/compare` 与 `/compare/history`（结果对比）。
 
-### 2.2 后端结构
+- `features/generate/GenerateWorkspace.tsx` — 生成工作台
+- `features/generate/usePipelineRun.ts` — `pipeline/run` 提交 + `status` 轮询 + `latest` 恢复
+- `features/generate/useVideoStatus.ts` — 异步视频状态轮询
+- `features/generate/PipelineProgress.tsx` — 流程进度
+- `features/generate/ResultDisplay.tsx` / `VideoResultCard.tsx` — 结果与视频展示
+- `features/generate/PdfExportDocument.tsx` — PDF 报告导出
+- `features/models/ModelConfigWorkspace.tsx` — 模型配置页
+- `features/compare/*` — 结果对比与历史
+- `components/ui/EmptyState.tsx` / `ErrorState.tsx` / `LoadingState.tsx` — 状态组件
 
-- `crew/pipeline.py` — 工作流编排入口
+### 2.2 后端（Next.js Route Handlers + Python CrewAI）
+
+业务层 Route Handler 通过 `PYTHON_EXECUTABLE` spawn `crew/` 下脚本，结果持久化到 `data/pipeline-results/`。
+
+- `crew/pipeline.py` — 工作流编排入口（Task 1→7 + 图片/视频生成）
 - `crew/agents.py` — CrewAI Agent 定义
 - `crew/prompts.py` — 提示词模板
 - `crew/schemas.py` — 输出校验与归一化
 - `crew/runner.py` — JSON 任务执行与重试
 - `crew/vision.py` — 产品识图任务
-- `crew/llm.py` — 硅基流动模型绑定
-- `crew/config.py` — Task ID 与模型前缀配置
+- `crew/generation.py` — 文生图 / 文生视频调用
+- `crew/poll_video.py` — 视频异步状态轮询
+- `crew/pdf_report.py` — PDF 报告生成
+- `crew/llm.py` / `crew/model_config.py` / `crew/config.py` — 模型绑定与 Task / 模型配置
+- `crew/module_records.py` — 模块运行记录
+- `crew/siliconflow/` — 硅基流动客户端、白名单（`verified_models.py`）、catalog、bootstrap、embeddings/rerank/speech/stt
 
 ### 2.3 类型与契约
 
-- `types/index.ts` — 请求、响应、任务 ID、模型配置、结果类型
+- `types/index.ts` — 请求、响应、AI Task ID、模型配置、结果与流水线类型
 - `docs/api/README.md` — API 契约、AI Task 映射、模型配置说明
 - `.cursor/rules/*.mdc` — 项目规则、接口规则、开发规范
 
 ---
 
-## 3. 当前已实现的能力
+## 3. AI Task（7 个）
 
-### 3.1 已完成
-- 前端已具备产品输入面板，支持描述、产品名称、品类和图片上传
-- 前端已具备分步串行调用流程，按顺序请求产品、内容、SEO、社媒、汇总接口
-- 前端已具备结果分类展示区，支持总览、产品、市场、文案、SEO、社媒等结果查看
-- 后端已具备产品识图、市场分析、内容生成、SEO 优化、社媒适配、结果汇总的基础链路
-- `content_write` 已明确要求输出 `posterCopy`、`imageIdeas`、`videoMaterial`，这些字段属于内容创意输出，不等于真实生图/视频生成
+| # | Task ID | 职责 | 默认模型 |
+|---|---------|------|----------|
+| 1 | `task.product_extract` | 产品识图与信息提取 | `Qwen/Qwen3-VL-32B-Instruct`（Vision） |
+| 2 | `task.market_research` | 市场与品牌策略 | `deepseek-ai/DeepSeek-V3` |
+| 3 | `task.content_write` | 营销内容与物料 | `Qwen/Qwen2.5-72B-Instruct` |
+| 4 | `task.seo_optimize` | SEO 与渠道适配 | `THUDM/GLM-4-32B-0414` |
+| 5 | `task.social_adapt` | 社媒文案 | `Qwen/Qwen2.5-32B-Instruct` |
+| 6 | `task.result_merge` | 汇总与一致性校验 | `deepseek-ai/DeepSeek-V3` |
+| 7 | `task.pdf_report` | PDF 专业报告 | `deepseek-ai/DeepSeek-V3` |
 
-### 3.2 进行中
-- 前端展示层与后端返回结构的契约对齐
-- 对缺失字段增加兜底，避免结果页在局部字段缺失时直接崩溃
-- 统一“输入字段”和“输出字段”的展示口径，避免用户误以为上方输入区的字段就是最终生成结果
-- 校验 `SEO` 输出中的 `channelAdaptation` 结构，保证前端与 schema 一致
+> 文案之后追加文生图（`baidu/ERNIE-Image-Turbo`）与文生视频（`Wan-AI/Wan2.2-T2V-A14B`）。实际模型以 `.env` 中 `AGENT_MODEL_*` 配置为准，默认值须落在 `crew/siliconflow/verified_models.py` 白名单内。
 
-### 3.3 待补充
-- `SEO` 返回结构是否应在类型层显式声明为必填，避免前端假设过强
-- `GenerateWorkspace` 中“上方输入字段”与“下方结果字段”之间的视觉解释文案
-- `docs/api/README.md` 与 `types/index.ts` 中关于 SEO 契约的同步更新
-- 结果页对各模块空状态的统一展示文案
-
-### 3.4 前端主流程
-当前首页主流程采用分步串行调用：
-1. `/api/product/analyze`
-2. `/api/content/generate`
-3. `/api/seo/optimize`
-4. `/api/social/generate`
-5. `/api/result/merge`
-
-当前前端的结果页已经开始展示各模块输出，但仍存在字段缺失时的崩溃风险。已经确认的一个典型问题是 `SEO` 结果里的 `channelAdaptation` 结构不稳定时，页面会直接读取失败。说明前端展示层接近完成，但数据契约兜底仍需继续补强。
-
-`/api/pipeline/run` 保留为后端一键编排入口、调试入口和未来批处理入口。
-
-### 3.2 后端 AI Task
-当前后端共 6 个核心任务：
-- `task.product_extract`
-- `task.market_research`
-- `task.content_write`
-- `task.seo_optimize`
-- `task.social_adapt`
-- `task.result_merge`
-
-### 3.3 现有内容字段
-`content_write` 任务要求并返回以下内容字段：
-- `title`
-- `sellingPointCopy`
-- `detailPageContent`
-- `conversionDescription`
-- `videoScript`
-- `posterCopy`
-- `imageIdeas`
-- `videoMaterial`
-
-这些字段目前用于：
-- 前端结果页展示
-- 为后续真实图片/视频生成保留内容基础
-- 作为营销物料的一部分，而不是独立生成任务
+### `content_write` 输出字段
+`title`、`sellingPointCopy`、`detailPageContent`、`conversionDescription`、`posterCopy`、`imageIdeas`、`videoScript`、`videoMaterial`。
 
 ---
 
-## 4. 目前已确认的问题
+## 4. 关键约定
 
-### 4.1 依赖问题
-- `crew/requirements.txt` 原本缺少 `botocore`
-- 当前 Python 环境未安装 `botocore`
-- 运行日志里出现过与 LiteLLM 相关的 `botocore` 缺失错误
-
-### 4.2 schema 兜底问题
-之前 `crew/schemas.py` 对以下字段存在自动兜底：
-- `posterCopy`
-- `imageIdeas`
-- `videoMaterial`
-
-这会掩盖模型未真实返回字段的问题。当前已调整为：
-- 这些字段必须由模型真实返回
-- 否则直接报错
-
-同时，前端也暴露出类似问题：某些展示组件默认假设后端一定返回完整结构，例如 `channelAdaptation.xiaohongshu`。当数据契约不稳定时，页面会直接报错，因此前后端都需要同步补强“可选字段兜底”与“结构缺失提示”的策略。
-
-### 4.3 任务边界问题
-当前项目里“图片创意”和“视频脚本”已经有，但并不等于：
-- 真正的生图模型接入
-- 真正的视频生成模型接入
-
-这部分能力如果要做，必须作为新的项目升级项明确设计，不能混在现有文案输出里误认为已经完成。
+1. **模型供应方统一**：仅使用硅基流动（`siliconflow`）单 Provider + `SILICONFLOW_API_KEY`；不同 AI Task 绑定不同硅基流动模型。
+2. **白名单约束**：默认模型必须在 `crew/siliconflow/verified_models.py` 内；`.env` 填非白名单模型时 `run_pipeline` 启动即报错。
+3. **统一返回结构**：所有接口返回 `{ code, message, data }`。
+4. **schema 不掩盖缺失**：关键字段须由模型真实返回，兜底只用于非核心字段。
+5. **视频默认异步**：pipeline 提交即返回 `requestId`；`AGENT_VIDEO_INLINE=1` 可切回同步内联。
+6. **文档、类型、实现一致**：README、API 文档、任务清单、Cursor rules、`types/`、crew prompts/pipeline/schemas、前端展示须同口径。
 
 ---
 
-## 5. 当前统一结论
+## 5. 运行环境注意
 
-### 现在的项目本质
-当前项目本质是：
-
-**营销内容生成系统 + 产品识图 + SEO + 社媒 + 汇总**
-
-### 当前不应误判为
-
-**营销内容生成系统 + 真实生图 + 真实视频生成系统**
-
-### 因此当前升级边界
-后续如果要扩展生图 / 视频能力，应当作为明确的新模块来设计，而不是把现有 `posterCopy`、`imageIdeas`、`videoMaterial` 直接视为已完成的生图/视频任务。
+- **Python 版本**：CrewAI 不支持 Python 3.14，需用 3.11 / 3.12 建 `crew/.venv`，并在 `.env` 设置 `PYTHON_EXECUTABLE` 指向该 venv。
+- **依赖**：`crew/requirements.txt` 已包含 `botocore`（LiteLLM 运行所需），不再缺失。
+- 详细环境变量见 [`docs/api/env.example`](api/env.example)。
 
 ---
 
-## 6. 后续升级总方案
+## 6. 后续可选演进
 
-### 方案 A 当前保持不变
-如果项目定位保持为“营销内容生成系统”，则只需：
-- 保持现有 6 个 AI Task
-- 继续强化提示词、schema、前端展示与后端稳定性
-- 不新增独立生图/视频生成链路
-
-适用场景：
-- 项目目标是内容策划、营销文案、内容物料输出
-- 不追求直接产出图片或视频文件
-
-### 方案 B 向“内容 + 生图 + 视频生成”升级
-如果项目要升级为更完整的生成系统，则需要：
-
-#### B1. 新增能力边界
-- 文案生成：保持现有内容链路
-- 生图生成：新增独立图片生成任务
-- 视频生成：新增独立视频生成任务
-
-#### B2. 新增任务设计
-建议拆分为：
-- `task.product_extract` — 产品识图
-- `task.market_research` — 市场分析
-- `task.content_write` — 营销内容生成
-- `task.image_generate` — 图片/海报生成
-- `task.video_generate` — 视频生成或视频素材生成
-- `task.seo_optimize` — SEO 优化
-- `task.social_adapt` — 社媒适配
-- `task.result_merge` — 汇总校验
-
-#### B3. 新增类型
-需要补充：
-- 图片生成请求/响应结构
-- 视频生成请求/响应结构
-- 资源状态结构
-- 任务状态结构
-
-#### B4. 新增接口
-可考虑新增：
-- `/api/image/generate`
-- `/api/video/generate`
-
-也可以按业务继续拆分，但必须明确接口职责，不与内容生成混淆。
-
-#### B5. 新增前端展示
-结果页需新增：
-- 图片生成结果区
-- 视频生成结果区
-- 生成状态与失败重试
-- 资源下载 / 预览 / 导出
-
----
-
-## 7. 统一实现原则
-
-1. **先定定位，再改代码**
-   - 不要一边查一边打补丁
-   - 先确认项目到底是什么，再统一所有层
-   - 当前阶段优先修正展示层与数据契约稳定性，再继续推进内容链路统一
-
-2. **任务边界必须清晰**
-   - 文案、图片、视频不能混成一个模糊能力
-
-3. **schema 不能掩盖模型缺失**
-   - 关键字段应由模型真实返回
-   - 兜底只能用于非核心字段或明确约定的 fallback 场景
-
-4. **模型配置必须统一**
-   - 当前只允许硅基流动单路由
-   - 不引入多 Provider 路由混用
-   - 只通过不同任务绑定不同硅基流动模型
-
-5. **文档、类型、实现必须一致**
-   - README
-   - API 文档
-   - 任务清单
-   - Cursor rules
-   - types
-   - crew prompts / pipeline / schemas
-   - 前端展示
-   必须同口径
-
----
-
-## 8. 建议执行顺序
-
-### 第一阶段
-- 确认最终项目定位
-- 确认是否要真实接入生图和视频生成
-- 不再修改实现，先统一文档口径
-
-### 第二阶段
-- 如果不扩展生图/视频：
-  - 继续稳住当前 6 Task 内容链路
-  - 强化提示词与 schema
-  - 修复依赖和运行稳定性
-
-### 第三阶段
-- 如果要扩展生图/视频：
-  - 拆任务
-  - 补类型
-  - 补接口
-  - 补前端展示
-  - 补模型映射
-
----
-
-## 9. 当前推荐决策
-
-### 推荐当前先采用
-**方案 A：保持项目为“营销内容生成系统”**
-
-理由：
-- 当前代码和文档已经形成一套完整的营销内容链路
-- 生图和视频真正生成需要新增任务和新接口，不适合在现阶段继续打补丁
-- 先把当前链路稳定，后续再按明确方案升级，会更稳妥
-
-### 目前的实际进度判断
-结合你刚才截图和现有实现，当前项目已经完成到以下程度：
-- 前端主流程与结果页基本搭好
-- 产品 / 市场 / 内容 / SEO / 社媒 / 汇总这些模块都已经有展示位置
-- 目前的主要问题不是“没有功能”，而是“部分字段缺失时前端会崩溃”以及“后端输出结构与前端预期可能不完全一致”
-- 因此当前最需要优先做的是：**统一返回结构、补齐兜底、减少页面级运行时错误**
-
-### 下一步建议
-如果你同意，我建议下一轮直接把这个文档继续改成两部分：
-1. “当前已完成到哪一步”——按页面与接口逐项列清楚
-2. “下一步继续修改什么”——按优先级列出前端兜底、后端 schema、提示词与接口契约修正项
-
-### 若你确认要升级
-下一步再启动**方案 B**，并按阶段重构。
+- 部署与生产环境配置说明
+- 更多渠道 / 平台适配与批处理模式
+- TTS / STT 接入主链路（当前 `/api/siliconflow/speech`、`/stt` 路由已保留，未入白名单主链路）
+- 生成结果的版本管理与团队协作

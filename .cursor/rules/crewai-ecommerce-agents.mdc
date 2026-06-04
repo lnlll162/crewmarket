@@ -15,6 +15,9 @@ alwaysApply: true
 - `sellingPoints`
 - `summary`
 
+## 2. 市场与品牌策略 Agent
+负责基于产品信息分析市场趋势、竞品风格、用户画像并给出品牌调性与营销建议。
+
 ### 输出
 - `marketTrends`
 - `competitorStyle`

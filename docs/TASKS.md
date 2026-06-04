@@ -2,7 +2,7 @@
 
 > 项目任务跟踪文档。随开发进度更新状态，与 [README](../README.md) 路线图及 Cursor 规则保持一致。
 
-**最后更新：** 2026-05-25（API 契约 v0.1）
+**最后更新：** 2026-06-03（API 契约 v0.4 · 主链路已交付并实测跑通）
 
 ---
 
@@ -28,134 +28,98 @@
 
 ## 阶段 1：API 契约与类型定义
 
-> 规则要求：**先定义接口与数据结构，再开始功能开发。**
-
 - [x] 编写 API 设计文档（[`docs/api/README.md`](api/README.md)）
-  - [x] 业务 REST API（6 个）与 AI Task 层（6 个）分层说明
+  - [x] 主流程 / 分步 / 辅助 REST API 分层说明
+  - [x] AI 执行层（7 个 AI Task）说明与 REST ↔ AI 映射
   - [x] 统一返回结构 `{ code, message, data }`
   - [x] 错误码体系
-  - [x] 请求/响应示例 JSON
+  - [x] 请求 / 响应示例 JSON
 - [x] 定义核心 TypeScript 类型（[`types/index.ts`](../types/index.ts)）
-  - [x] 产品输入（图片、文字描述、可选补充信息）
-  - [x] 产品理解结果（名称、品类、属性、卖点、摘要）
-  - [x] 市场与品牌策略结果（市场分析、用户画像、调性建议）
-  - [x] 营销内容生成结果（标题、详情页、SEO、社媒、视频脚本、海报文案）
-  - [x] 营销物料扩展结果（海报布局、分镜、画面提示词）
-  - [x] 汇总营销方案（最终 JSON 结构）
+  - [x] 产品输入、产品理解、市场与品牌策略结果
+  - [x] 营销内容与物料结果（含 `posterCopy`、`imageIdeas`、`videoScript`、`videoMaterial`）
+  - [x] 图片生成 / 视频生成结果结构（`imageGeneration` / `videoGeneration`）
+  - [x] 汇总结果、PDF 报告结构、流水线响应 `PipelineRunResponseData`
+  - [x] AI Task 标识 `AiTaskId` 与执行顺序 `AI_TASK_ORDER`（7 个）
 - [x] 确认接口路径约定
-  - [x] `POST /api/product/analyze` — 产品提取 + 市场分析（2 个 AI Task）
-  - [x] `POST /api/content/generate` — 电商文案（1 个 AI Task）
-  - [x] `POST /api/seo/optimize` — SEO 优化（1 个 AI Task）
-  - [x] `POST /api/social/generate` — 社媒文案（1 个 AI Task）
-  - [x] `POST /api/result/merge` — 汇总协调（1 个 AI Task）
-  - [x] `POST /api/pipeline/run` — 保留的一键编排入口（后端/调试/未来批处理使用）
-  - [x] 前端主流程采用分布式串行调用，上述 5 个业务接口为当前实际运行路径
-  - [x] `POST /api/social/generate` — 社媒文案（1 个 AI Task）
-  - [x] `POST /api/result/merge` — 汇总协调（1 个 AI Task）
+  - [x] `POST /api/pipeline/run` — 一键编排，返回 `pipelineId`（前端主入口）
+  - [x] `GET /api/pipeline/status/{pipelineId}` — 轮询分步进度与结果
+  - [x] `GET /api/pipeline/latest` · `GET /api/pipeline/result/{pipelineId}` — 恢复 / 读取结果
+  - [x] `GET /api/video/status/{requestId}` — 异步视频状态轮询
+  - [x] 分步业务接口（product/analyze、content/generate、seo/optimize、social/generate、result/merge）保留供调试
 
 ---
 
 ## 阶段 2：Next.js 应用脚手架
 
-> 当前前端已采用分布式串行调用作为主流程；`/api/pipeline/run` 仅作为保留的一键编排入口与后端调试入口，不作为首页默认主路径。
+- [x] 初始化 Next.js 13.5（App Router）+ TypeScript 项目
+- [x] 集成 Tailwind CSS
+- [x] 集成 HeroUI 组件库
+- [x] 搭建目录结构（`app/`、`components/`、`features/`、`lib/`、`types/`、`constants/`、`data/`、`crew/`）
+- [x] 配置环境变量模板（[`docs/api/env.example`](api/env.example)）
+- [x] 实现基础布局（Header、主内容区、页脚、全局氛围背景）
+- [x] 实现全局加载态 / 空状态 / 错误态组件
 
-### 模块组织方式（当前约定）
+### 当前前端模块
 
-- `features/generate/` — 首页生成工作台与分步调用流程
-- `features/generate/usePipelineRun.ts` — 分布式串行调用编排
+- `features/generate/GenerateWorkspace.tsx` — 首页生成工作台
+- `features/generate/usePipelineRun.ts` — `pipeline/run` 提交 + `status` 轮询 + `latest` 恢复
+- `features/generate/useVideoStatus.ts` — 异步视频状态轮询
 - `features/generate/PipelineProgress.tsx` — 步骤进度展示
-- `features/generate/ResultDisplay.tsx` — 结果展示分区
-- `types/index.ts` — 请求、响应、任务与模型配置类型
-- `docs/api/README.md` — 接口契约与 AI Task 映射说明
-
-### 保留 TODO（不得遗漏）
-
-- [ ] 校验首页图片上传点击交互在各浏览器下的稳定性
-- [ ] 统一前端主流程、接口文档与任务名称的叙事口径
-- [ ] 确认后端各接口对 `imageBase64` 的接收与识图链路完整性
-- [ ] 在后端实现前，保持前端分布式串行调用路径不变
-- [ ] 后续如需切回一键编排，需同步更新文档、类型与前端调用逻辑
-
-
-- [ ] 初始化 Next.js + TypeScript 项目
-- [ ] 集成 Tailwind CSS
-- [ ] 集成 Hero UI 组件库
-- [ ] 搭建推荐目录结构
-  - [ ] `app/` — 页面与路由
-  - [ ] `components/` — 通用组件
-  - [ ] `features/` — 业务模块
-  - [ ] `services/` 或 `api/` — 接口请求
-  - [ ] `types/` — 类型定义
-  - [ ] `utils/` — 工具函数
-  - [ ] `constants/` — 常量配置
-- [ ] 配置环境变量模板（`.env.example`）
-- [ ] 实现基础布局（Header、主内容区、页脚）
-- [ ] 实现全局加载态 / 空状态 / 错误态组件
+- `features/generate/ResultDisplay.tsx` / `VideoResultCard.tsx` — 结果与视频展示
+- `features/generate/PdfExportDocument.tsx` — PDF 报告导出
+- `features/models/ModelConfigWorkspace.tsx` — `/models` 模型配置页
+- `features/compare/CompareWorkspace.tsx` / `CompareHistoryWorkspace.tsx` — 结果对比与历史
 
 ---
 
 ## 阶段 3：后端 API 实现
 
-- [ ] 实现统一响应封装（success / error helper）
-- [ ] `POST /api/product/analyze` — 产品信息提取（可先 mock）
-- [ ] `POST /api/content/generate` — 文案生成
-- [ ] `POST /api/seo/optimize` — SEO 优化
-- [ ] `POST /api/social/generate` — 社媒文案
-- [ ] `POST /api/result/merge` — 汇总输出
-- [ ] `POST /api/pipeline/run` — 一键编排（串行 6 个 AI Task）
-- [ ] 编写接口 mock 数据，供前端联调
-- [ ] 补充接口联调说明与 curl / fetch 示例
+- [x] 实现统一响应封装（`lib/api-response.ts`：success / fail helper）
+- [x] `POST /api/pipeline/run` — 一键编排（异步串行 7 个 AI Task + 持久化）
+- [x] `GET /api/pipeline/status/{pipelineId}` · `latest` · `result/{pipelineId}`
+- [x] `POST /api/product/analyze` — 产品信息提取 + 市场分析
+- [x] `POST /api/content/generate` — 文案与物料生成
+- [x] `POST /api/seo/optimize` — SEO 优化与渠道适配
+- [x] `POST /api/social/generate` — 社媒文案
+- [x] `POST /api/result/merge` — 汇总输出
+- [x] `GET /api/video/status/{requestId}` — 异步视频状态
+- [x] 模型配置接口：`/api/agent-models/config`（GET/PUT/DELETE）、`/api/agent-models/probe`
+- [x] 硅基流动能力接口：`/api/siliconflow/models`、`embeddings`、`rerank`、`speech`、`stt`
+- [x] 辅助接口：`/api/compare/history`、`/api/image-proxy`
 
 ---
 
 ## 阶段 4：CrewAI 工作流集成
 
-- [ ] 搭建 Python / CrewAI 运行环境（或确定与 Next.js 的集成方式）
-- [ ] 实现智能体：产品提取 Agent
-- [ ] 实现智能体：市场与品牌策略 Agent
-- [ ] 实现智能体：营销内容 Agent
-- [ ] 实现智能体：营销物料 Agent
-- [ ] 实现智能体：汇总协调 Agent
-- [ ] 编排完整工作流（产品理解 → 市场与品牌 → 内容生成 → 物料生成 → 汇总）
-- [ ] 结构化提示词模板（可复用、可维护）
-- [ ] 将 CrewAI 输出映射到 API 契约字段
-- [ ] 处理信息不足时的「待确认」标记逻辑
+- [x] 搭建 Python / CrewAI 运行环境（`crew/.venv`，Python 3.11/3.12）
+- [x] 实现 7 个 AI Task 智能体（产品提取、市场策略、营销内容、SEO、社媒、汇总、PDF 报告）
+- [x] 编排完整工作流（`crew/pipeline.py`，串行 Task 1→7）
+- [x] 结构化提示词模板（`crew/prompts.py`）
+- [x] 将 CrewAI 输出映射到 API 契约字段、处理「待确认」标记（`crew/schemas.py`）
+- [x] 接入硅基流动模型绑定与白名单校验（`crew/llm.py`、`crew/siliconflow/`）
+- [x] 文生图（`generate_image`，ERNIE-Image-Turbo）与异步文生视频（`submit_video` / `poll_video_status`，Wan2.2-T2V）
 
 ---
 
 ## 阶段 5：前端功能与预览
 
-- [ ] 产品输入页（文字描述 + 图片上传 + 可选补充信息）
-- [ ] 生成流程触发与进度展示
-- [ ] 结果预览面板
-  - [ ] 产品分析
-  - [ ] 电商文案（标题、卖点、详情页）
-  - [ ] SEO 关键词与优化文案
-  - [ ] 社媒文案（多平台 Tab）
-- [ ] 复制 / 导出 JSON 功能
-- [ ] 前后端联调，对接真实或 mock API
-- [ ] 完善成功态、失败态、重试交互
+- [x] 产品输入页（文字描述 + 图片上传 + 可选补充信息）
+- [x] 生成流程触发与进度展示（轮询式异步）
+- [x] 结果预览面板（产品 / 市场 / 文案 / SEO / 社媒 / 汇总）
+- [x] 图片与视频物料展示（视频异步状态轮询）
+- [x] 复制 / 导出（JSON + PDF 报告导出）
+- [x] 前后端真实联调（硅基流动 live）
+- [x] 成功态、失败态、重试与页面切换后状态恢复
 
 ---
 
 ## 阶段 6：质量与交付
 
-- [ ] 关键路径手动测试清单
-- [ ] 更新 README「快速开始」（安装、运行、环境变量）
-- [ ] 同步更新 API 文档与类型定义
-- [ ] 代码审查：类型严格、无随意 `any`、命名统一
+- [x] 关键路径手动测试（pipeline 全链路 live 实测通过）
+- [x] 更新 README「快速开始」（安装、运行、Python 版本约束、环境变量）
+- [x] 同步更新 API 文档与类型定义
+- [x] crew 侧 smoke / probe 脚本（`crew/test_*_smoke.py`、`crew/probe_*.py`）
 - [ ] （可选）部署方案与生产环境配置说明
-
----
-
-## 当前优先级（建议执行顺序）
-
-1. **阶段 1** — API 契约与 TypeScript 类型（阻塞后续开发）
-2. **阶段 2** — Next.js 脚手架（可并行准备目录与依赖）
-3. **阶段 3** — 后端 API + mock 联调
-4. **阶段 5** — 前端输入与预览（依赖阶段 2、3）
-5. **阶段 4** — CrewAI 真实能力接入（替换 mock）
-6. **阶段 6** — 文档、测试与交付
 
 ---
 
@@ -163,16 +127,19 @@
 
 | README 路线图项 | 对应阶段 | 状态 |
 |-----------------|----------|------|
-| Next.js 应用脚手架 | 阶段 2 | 待办 |
-| 产品分析与内容生成 API | 阶段 1 + 3 + 4 | 待办 |
-| 前端内容预览与导出 | 阶段 5 | 待办 |
-| CrewAI 工作流集成 | 阶段 4 | 待办 |
+| Next.js 应用脚手架 | 阶段 2 | ✅ 已完成 |
+| 产品分析与内容生成 API | 阶段 1 + 3 + 4 | ✅ 已完成 |
+| 前端内容预览与导出（含 PDF） | 阶段 5 | ✅ 已完成 |
+| CrewAI 工作流集成（7 Task） | 阶段 4 | ✅ 已完成 |
+| 文生图 / 文生视频物料生成 | 阶段 4 | ✅ 已完成 |
+| 模型配置页 + 实测探活 | 阶段 3 + 5 | ✅ 已完成 |
+| 流水线持久化与生成历史对比 | 阶段 3 + 5 | ✅ 已完成 |
 
 ---
 
 ## 备注
 
-- 开发过程中接口或字段变更，须同步更新 `docs/api/` 与 `types/`。
-- **6 个 AI Task 各自绑定不同大模型**（与老师演示一致），通过 `AGENT_MODEL_*` 环境变量配置。
+- 接口或字段变更须同步更新 `docs/api/` 与 `types/`。
+- **7 个 AI Task 各自绑定不同硅基流动模型**，通过 `AGENT_MODEL_*` 环境变量配置；默认模型须落在 `crew/siliconflow/verified_models.py` 白名单内。
 - 智能体输出须统一口径，由汇总 Agent 做去重与风格统一。
 - 页面设计遵循「精致但克制」，优先保证可联调、可维护。
